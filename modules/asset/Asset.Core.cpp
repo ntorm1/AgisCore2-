@@ -7,10 +7,9 @@ module;
 
 module AssetModule;
 
-import <shared_mutex>;
 import <optional>;
 
-import AssetPrivateModule;
+import :AssetPrivateModule;
 
 import AgisFileUtils;
 

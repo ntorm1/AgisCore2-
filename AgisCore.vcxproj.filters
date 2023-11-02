@@ -71,5 +71,11 @@
     <ClCompile Include="modules\exchange\ExchangeMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="modules\hydra\Hydra.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\hydra\Hydra.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

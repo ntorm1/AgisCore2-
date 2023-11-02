@@ -1,9 +1,9 @@
-export module AssetPrivateModule;
+export module AssetModule:AssetPrivateModule;
 
 import <vector>;
 import <unordered_map>;
-export import <expected>;
-export import <string>;
+import <expected>;
+import <string>;
 
 
 import AgisError;

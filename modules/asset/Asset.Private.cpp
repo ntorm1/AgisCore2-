@@ -5,7 +5,7 @@ module;
 #include <unordered_set>
 #include <algorithm>
 
-module AssetPrivateModule;
+module AssetModule:AssetPrivateModule;
 
 import AgisTimeUtils;
 

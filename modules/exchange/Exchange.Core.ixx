@@ -60,6 +60,7 @@ public:
 	Exchange(Exchange const&) = delete;
 	Exchange& operator=(Exchange const&) = delete;
 
+	std::vector<long long> const& get_dt_index() const noexcept;
 	std::vector<Asset*> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;
 

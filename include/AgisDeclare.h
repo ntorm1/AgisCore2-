@@ -7,4 +7,6 @@ namespace Agis
 
 	class Exchange;
 	class ExchangeMap;
+
+	class Hydra;
 }

@@ -138,6 +138,13 @@ std::vector<Asset*>& Exchange::get_assets_mut() noexcept
 
 
 //============================================================================
+std::vector<long long> const&
+Exchange::get_dt_index() const noexcept
+{
+	return _p->dt_index;
+}
+
+//============================================================================
 std::vector<Asset*> const&
 Exchange::get_assets() const noexcept
 {

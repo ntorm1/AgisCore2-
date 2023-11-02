@@ -1,6 +1,7 @@
 #include "pch.h"
 
-import Exchange;
+import HydraModule;
+//import ExchangeMapModule;
 
 using namespace Agis;
 
@@ -10,15 +11,13 @@ std::string exchange_source = "C:\\Users\\natha\\OneDrive\\Desktop\\C++\\AgisCor
 
 
 TEST(ExchangeTestSuite, ExchangeCreate) {
-	auto exchange_map = ExchangeMap();
-	auto res = exchange_map.create_exchange(
+	auto hydra = Hydra();
+	auto res = hydra.create_exchange(
 		exchange_id,
 		dt_format,
 		exchange_source
 	);
 	EXPECT_TRUE(res.has_value());
-	auto exchange = res.value();
-
-	EXPECT_TRUE(exchange_map.asset_exists("test1"));
-	EXPECT_FALSE(exchange_map.asset_exists("test0"));
+	EXPECT_TRUE(hydra.asset_exists("test1"));
+	EXPECT_FALSE(hydra.asset_exists("test0"));
 }
