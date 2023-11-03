@@ -13,6 +13,7 @@ export module HydraModule;
 
 import <expected>;
 import <string>;
+import <vector>;
 
 import AgisError;
 
@@ -31,7 +32,10 @@ public:
 	AGIS_API Hydra();
 	AGIS_API ~Hydra();
 
+	AGIS_API std::expected<bool, AgisException> build() noexcept;
+
 	[[nodiscard]] ExchangeMap const& get_exchanges() const noexcept;
+	AGIS_API [[nodiscard]] std::vector<long long> const& get_dt_index() const noexcept;
 
 	AGIS_API [[nodiscard]] bool asset_exists(std::string const& asset_id) const noexcept;
 

@@ -19,8 +19,10 @@ export struct AssetPrivate
 	size_t _cols;
 	size_t _open_index;
 	size_t _close_index;
+	size_t _current_index = 0;
 	std::vector<long long> _dt_index;
 	std::vector<double> _data;
+	double* _data_ptr;
 	std::unordered_map<std::string, size_t> _headers;
 
 

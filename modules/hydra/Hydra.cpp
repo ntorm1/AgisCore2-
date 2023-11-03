@@ -31,10 +31,26 @@ Hydra::~Hydra()
 
 
 //============================================================================
+std::expected<bool, AgisException>
+Hydra::build() noexcept
+{
+	AGIS_ASSIGN_OR_RETURN(res, _p->exchanges.build());
+}
+
+
+//============================================================================
 ExchangeMap const&
 Hydra::get_exchanges() const noexcept
 {
 	return _p->exchanges;
+}
+
+
+//============================================================================
+std::vector<long long>
+const& Hydra::get_dt_index() const noexcept
+{
+	return _p->exchanges.get_dt_index();
 }
 
 

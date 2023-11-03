@@ -52,7 +52,7 @@ ExchangeMap::create_exchange(std::string exchange_id, std::string dt_format, std
 	if (_p->exchange_indecies.find(exchange_id) != _p->exchange_indecies.end())
 	{
 		return std::unexpected(AgisException("Exchange already exists"));
-	}
+	}  
 
 	// create the new exchange and copy over asset pointers
 	AGIS_ASSIGN_OR_RETURN(exchange, _p->factory.create_exchange(exchange_id, dt_format, source));
@@ -88,7 +88,7 @@ delete _p;
 
 
 //============================================================================
-void
+std::expected<bool, AgisException>
 ExchangeMap::build() noexcept
 {
 	this->_p->dt_index.clear();
@@ -99,6 +99,7 @@ ExchangeMap::build() noexcept
 			exchange->get_dt_index()
 		);
 	}
+	return true;
 }
 
 
@@ -134,6 +135,27 @@ ExchangeMap::get_exchange(std::string const& id) const noexcept
 	return _p->exchanges[it->second];
 }
 
+
+//============================================================================
+std::vector<long long> const&
+ExchangeMap::get_dt_index() const noexcept
+{
+	return _p->dt_index;
+}
+
+
+//============================================================================
+std::optional<double>
+ExchangeMap::get_asset_price(std::string const& asset_id, bool close) const noexcept
+{	
+	auto it = _p->asset_indecies.find(asset_id);
+	if (it == _p->asset_indecies.end())
+	{
+		return std::nullopt;
+	}
+	return std::nullopt;
+	//return _p->assets[it->second]->get_price(close);
+}
 
 
 

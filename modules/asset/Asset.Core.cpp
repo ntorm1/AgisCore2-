@@ -20,16 +20,60 @@ namespace Agis
 //============================================================================
 Asset::Asset(AssetPrivate* asset, std::string asset_id, size_t asset_index)
 {
-	_asset = asset;
+	_p = asset;
+	_p->_data_ptr = _p->_data.data();
 	_asset_id = asset_id;
 	_asset_index = asset_index;
 }
 
 
 //============================================================================
+AssetState
+Asset::step(long long global_time) noexcept
+{
+	if (_p->_current_index == _p->_dt_index.size())
+	{
+		_state = AssetState::LAST;
+		_p->_current_index++;
+		_p->_data_ptr += _p->_cols;
+		return _state;
+	}
+	auto asset_time = _p->_dt_index[_p->_current_index];
+	switch (_state)
+	{
+		case AssetState::PENDING:
+			if (asset_time == global_time)
+			{
+				_state = AssetState::STREAMING;
+				_p->_data_ptr += _p->_cols;
+				_p->_current_index++;
+			}
+			break;
+		case AssetState::STREAMING:
+			if (asset_time != global_time)
+			{
+				_state = AssetState::DISABLED;
+			}
+			break;
+		case AssetState::DISABLED:
+			if (asset_time == global_time)
+			{
+				_state = AssetState::STREAMING;
+				_p->_data_ptr += _p->_cols;
+				_p->_current_index++;
+			}
+			break;
+		case AssetState::EXPIRED:
+			break;
+	}
+	return _state;
+}
+
+
+//============================================================================
 Asset::~Asset()
 {
-	delete _asset;
+	delete _p;
 }
 
 
@@ -43,28 +87,47 @@ size_t Asset::get_index() const noexcept
 //============================================================================
 size_t Asset::rows() const noexcept
 {
-	return _asset->_rows;
+	return _p->_rows;
 }
 
 
 //============================================================================
 size_t Asset::columns() const noexcept
 {
-	return _asset->_cols;
+	return _p->_cols;
+}
+
+
+//============================================================================
+std::optional<double>
+Asset::get_market_price(bool is_close) const noexcept
+{
+	if (_state != AssetState::STREAMING)
+	{
+		return std::nullopt;
+	}
+	if (is_close)
+	{
+		return *(_p->_data_ptr + _p->_close_index - _p->_cols);
+	}
+	else 
+	{
+		return *(_p->_data_ptr + _p->_open_index - _p->_cols);
+	}
 }
 
 
 //============================================================================
 std::vector<long long> const& Asset::get_dt_index() const noexcept
 {
-	return _asset->_dt_index;
+	return _p->_dt_index;
 }
 
 
 //============================================================================
 std::vector<double> const& Asset::get_data() const noexcept
 {
-	return _asset->_data;
+	return _p->_data;
 }
 
 
@@ -72,17 +135,17 @@ std::vector<double> const& Asset::get_data() const noexcept
 std::optional<std::vector<double>>
 Asset::get_column(std::string const& column_name) const noexcept
 {
-	if (_asset->_headers.find(column_name) == _asset->_headers.end())
+	if (_p->_headers.find(column_name) == _p->_headers.end())
 	{
 		return std::nullopt;
 	}
-	auto col_index = _asset->_headers.at(column_name);
+	auto col_index = _p->_headers.at(column_name);
 	std::vector<double> col;
-	col.reserve(_asset->_rows);
+	col.reserve(_p->_rows);
 	// loop over row major data in extract the column
-	for (size_t row = 0; row < _asset->_rows; row++)
+	for (size_t row = 0; row < _p->_rows; row++)
 	{
-		col.push_back(_asset->_data[_asset->get_index(row, col_index)]);
+		col.push_back(_p->_data[_p->get_index(row, col_index)]);
 	}
 	return col;
 }
@@ -92,9 +155,9 @@ Asset::get_column(std::string const& column_name) const noexcept
 std::vector<std::string>
 Asset::get_column_names() const noexcept {
 	std::vector<std::string> names;
-	names.resize(_asset->_headers.size());  // Resize the vector to the required size
+	names.resize(_p->_headers.size());  // Resize the vector to the required size
 
-	for (const auto& [name, index] : _asset->_headers) {
+	for (const auto& [name, index] : _p->_headers) {
 		names[index] = name;
 	}
 
