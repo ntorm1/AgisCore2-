@@ -1,7 +1,7 @@
 #include "pch.h"
 
 import HydraModule;
-//import ExchangeMapModule;
+import ExchangeMapModule;
 
 using namespace Agis;
 
@@ -27,28 +27,34 @@ namespace AgisExchangeTest {
 
 using namespace AgisExchangeTest;
 
-TEST(ExchangeTestSuite, ExchangeCreate) {
-	auto hydra = Hydra();
-	auto res = hydra.create_exchange(
-		exchange_id_1,
-		dt_format,
-		exchange1_path
-	);
-	EXPECT_TRUE(res.has_value());
-	EXPECT_TRUE(hydra.asset_exists("test1"));
-	EXPECT_FALSE(hydra.asset_exists("test0"));
+
+class SimpleExchangeTests : public ::testing::Test
+{
+protected:
+	std::shared_ptr<Hydra> hydra;
+
+	void SetUp() override
+	{
+		hydra = std::make_shared<Hydra>();
+		auto res = hydra->create_exchange(
+			exchange_id_1,
+			dt_format,
+			exchange1_path
+		);
+	}
+};
+
+
+
+TEST_F(SimpleExchangeTests, ExchangeCreate) {
+	EXPECT_TRUE(hydra->asset_exists("test1"));
+	EXPECT_FALSE(hydra->asset_exists("test0"));
 }
 
 
-TEST(ExchangeTestSuite, ExchangeDtIndex) {
-	auto hydra = Hydra();
-	auto res = hydra.create_exchange(
-		exchange_id_1,
-		dt_format,
-		exchange1_path
-	).value();
-	hydra.build();
-	auto& dt_index = hydra.get_dt_index();
+TEST_F(SimpleExchangeTests, ExchangeDtIndex) {
+	hydra->build();
+	auto& dt_index = hydra->get_dt_index();
 	EXPECT_EQ(dt_index.size(), 6);
 	EXPECT_EQ(dt_index[0], t0);
 	EXPECT_EQ(dt_index[1], t1);
@@ -56,4 +62,41 @@ TEST(ExchangeTestSuite, ExchangeDtIndex) {
 	EXPECT_EQ(dt_index[3], t3);
 	EXPECT_EQ(dt_index[4], t4);
 	EXPECT_EQ(dt_index[5], t5);
+}
+
+
+TEST_F(SimpleExchangeTests, TestGetMarketPrice) {
+	hydra->build();
+	auto& exchanges = hydra->get_exchanges();
+
+	hydra->step();
+	EXPECT_EQ(exchanges.get_global_time(), t0);
+	EXPECT_FALSE(exchanges.get_market_price(asset_id_1, false).has_value());
+	EXPECT_FALSE(exchanges.get_market_price(asset_id_1, true).has_value());
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, false).value(), 101);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, true).value(), 101.5);
+
+	hydra->step();
+
+	EXPECT_EQ(exchanges.get_global_time(), t1);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_1, false).value(), 100);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_1, true).value(), 101);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, false).value(), 100);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, true).value(), 99);
+
+	hydra->reset();
+	hydra->step();
+	EXPECT_EQ(exchanges.get_global_time(), t0);
+	EXPECT_FALSE(exchanges.get_market_price(asset_id_1, false).has_value());
+	EXPECT_FALSE(exchanges.get_market_price(asset_id_1, true).has_value());
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, false).value(), 101);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, true).value(), 101.5);
+
+	hydra->step();
+
+	EXPECT_EQ(exchanges.get_global_time(), t1);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_1, false).value(), 100);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_1, true).value(), 101);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, false).value(), 100);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, true).value(), 99);
 }

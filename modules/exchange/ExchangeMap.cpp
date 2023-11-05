@@ -5,6 +5,7 @@ module;
 
 module ExchangeMapModule;
 import AssetModule;
+import OrderModule;
 import ExchangeModule;
 import AgisArrayUtils;
 
@@ -35,7 +36,11 @@ ExchangeFactory::create_exchange(
 struct ExchangeMapPrivate
 {
 	ExchangeFactory factory;
+	
 	std::vector<long long> dt_index;
+	size_t current_index;
+	long long global_dt = 0;
+
 	std::unordered_map<std::string, size_t> asset_indecies;
 	std::vector<Asset*> assets;
 	std::vector<Exchange*> exchanges;
@@ -104,6 +109,37 @@ ExchangeMap::build() noexcept
 
 
 //============================================================================
+void
+ExchangeMap::reset() noexcept
+{
+	_p->current_index = 0;
+	_p->global_dt = 0;
+	for (auto& exchange : _p->exchanges)
+	{
+		exchange->reset();
+	}
+}
+
+
+//============================================================================
+std::expected<bool, AgisException>
+ExchangeMap::step() noexcept
+{
+	if (_p->current_index >= _p->dt_index.size())
+	{
+		return true;
+	}
+	_p->global_dt = _p->dt_index[_p->current_index];
+	for (auto& exchange : _p->exchanges)
+	{
+		AGIS_ASSIGN_OR_RETURN(res, exchange->step(_p->global_dt));
+	}
+	_p->current_index++;
+	return true;
+}
+
+
+//============================================================================
 bool
 ExchangeMap::asset_exists(std::string const& id) const noexcept
 {
@@ -127,12 +163,15 @@ ExchangeMap::get_asset(std::string const& id) const noexcept
 std::expected<Exchange const*, AgisException>
 ExchangeMap::get_exchange(std::string const& id) const noexcept
 {
-	auto it = _p->exchange_indecies.find(id);
-	if (it == _p->exchange_indecies.end())
-	{
-		return std::unexpected(AgisException("Exchange does not exist"));
-	}
-	return _p->exchanges[it->second];
+	return this->get_exchange_mut(id);
+}
+
+
+//============================================================================
+long long
+ExchangeMap::get_global_time() const noexcept
+{
+	return _p->global_dt;
 }
 
 
@@ -145,16 +184,49 @@ ExchangeMap::get_dt_index() const noexcept
 
 
 //============================================================================
+std::expected<bool, AgisException>
+ExchangeMap::force_place_order(Order* order, bool is_close) noexcept
+{
+	auto asset_index = order->get_asset_index();
+	if (asset_index >= _p->assets.size())
+	{
+		return std::unexpected(AgisException("Invalid asset index"));
+	}
+	auto asset = _p->assets[asset_index];
+	auto market_price = asset->get_market_price(is_close);
+	if(!market_price)
+	{
+		return std::unexpected(AgisException("Invalid market price"));
+	}
+	order->fill(asset, market_price.value(), _p->global_dt);
+	return true;
+}
+
+
+//============================================================================
+std::expected<Exchange*, AgisException>
+ExchangeMap::get_exchange_mut(std::string const& id) const noexcept
+{
+	auto it = _p->exchange_indecies.find(id);
+	if (it == _p->exchange_indecies.end())
+	{
+		return std::unexpected(AgisException("Exchange does not exist"));
+	}
+	return _p->exchanges[it->second];
+}
+
+
+
+//============================================================================
 std::optional<double>
-ExchangeMap::get_asset_price(std::string const& asset_id, bool close) const noexcept
+ExchangeMap::get_market_price(std::string const& asset_id, bool close) const noexcept
 {	
 	auto it = _p->asset_indecies.find(asset_id);
 	if (it == _p->asset_indecies.end())
 	{
 		return std::nullopt;
 	}
-	return std::nullopt;
-	//return _p->assets[it->second]->get_price(close);
+	return _p->assets[it->second]->get_market_price(close);
 }
 
 

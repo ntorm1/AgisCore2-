@@ -7,6 +7,7 @@ module;
 #endif
 
 #include "AgisDeclare.h"
+#include <ankerl/unordered_dense.h>
 
 export module ExchangeModule;
 
@@ -31,8 +32,12 @@ export class Exchange
 private:
 	std::string _source;
 	ExchangePrivate* _p;
-	mutable std::shared_mutex _mutex;
 	size_t _index_offset = 0;
+	
+	/// <summary>
+	/// Mapping between portfolio child index and child portfolio
+	/// </summary>
+	ankerl::unordered_dense::map<size_t, Portfolio*> registered_portfolios;
 
 	Exchange(
 		std::string exchange_id,
@@ -51,18 +56,33 @@ private:
 
 	std::expected<bool, AgisException> load_folder() noexcept;
 	std::expected<bool, AgisException> load_assets() noexcept;
+	
+	[[nodiscard]] std::expected<bool, AgisException> step(long long global_dt) noexcept;
+	void reset() noexcept;
 	void build() noexcept;
+	std::optional<std::unique_ptr<Order>> place_order(std::unique_ptr<Order> order) noexcept;
+	
+	void process_market_order(Order* order) noexcept;
+	void process_order(Order* order) noexcept;
+	void process_orders() noexcept;
+
+	bool is_valid_order(Order const* order) const noexcept;
+	
 	void set_index_offset(size_t offset) noexcept { _index_offset = offset;}
 	std::vector<Asset*>& get_assets_mut() noexcept;
+
 public:
 	~Exchange();
 
 	Exchange(Exchange const&) = delete;
 	Exchange& operator=(Exchange const&) = delete;
 
+	// ==== const functions ==== //
 	std::vector<long long> const& get_dt_index() const noexcept;
 	std::vector<Asset*> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;
+
+
 
 };
 

@@ -28,10 +28,28 @@ Asset::Asset(AssetPrivate* asset, std::string asset_id, size_t asset_index)
 
 
 //============================================================================
+void
+Asset::reset() noexcept
+{
+	_p->_current_index = 0;
+	_p->_data_ptr = _p->_data.data();
+	_state = AssetState::PENDING;
+}
+
+
+//============================================================================
 AssetState
 Asset::step(long long global_time) noexcept
 {
-	if (_p->_current_index == _p->_dt_index.size())
+	// if the asset is expired, return the state and do nothing
+	if (_state == AssetState::LAST)
+	{
+		_state = AssetState::EXPIRED;
+		return _state;
+	}
+
+	// check if last step to force close open positions
+	if (_p->_current_index == _p->_dt_index.size() - 1)
 	{
 		_state = AssetState::LAST;
 		_p->_current_index++;
@@ -53,6 +71,11 @@ Asset::step(long long global_time) noexcept
 			if (asset_time != global_time)
 			{
 				_state = AssetState::DISABLED;
+			}
+			else
+			{
+				_p->_data_ptr += _p->_cols;
+				_p->_current_index++;
 			}
 			break;
 		case AssetState::DISABLED:

@@ -27,6 +27,9 @@
     <ClInclude Include="include\AgisDeclare.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="external\include\ankerl\unordered_dense.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -42,9 +45,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="modules\asset\Asset.Private.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="modules\standard\AgisError.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="modules\asset\Asset.Private.cpp">
@@ -75,6 +75,45 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="modules\hydra\Hydra.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\order\Order.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\order\Order.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\portfolio\Trade.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\portfolio\Trade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\portfolio\Position.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\portfolio\Position.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\portfolio\Portfolio.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\portfolio\Portfolio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\strategy\Strategy.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\strategy\Strategy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\standard\AgisError.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\strategy\StrategyTracer.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\strategy\StrategyTracer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

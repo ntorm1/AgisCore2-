@@ -44,6 +44,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <UseInteloneTBB>true</UseInteloneTBB>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -51,6 +52,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <UseInteloneTBB>true</UseInteloneTBB>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -71,11 +73,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)include;$(IncludePath);$(SolutionDir)external\include;</IncludePath>
     <AllProjectBMIsArePublic>true</AllProjectBMIsArePublic>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <AllProjectBMIsArePublic>true</AllProjectBMIsArePublic>
+    <IncludePath>$(SolutionDir)external\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -122,6 +125,7 @@
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
+      <ExceptionHandling>Sync</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -149,6 +153,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="external\include\ankerl\unordered_dense.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="include\AgisDeclare.h" />
     <ClInclude Include="include\AgisMacros.h" />
@@ -163,13 +168,25 @@
     <ClCompile Include="modules\exchange\ExchangeMap.ixx" />
     <ClCompile Include="modules\hydra\Hydra.cpp" />
     <ClCompile Include="modules\hydra\Hydra.ixx" />
+    <ClCompile Include="modules\order\Order.cpp" />
+    <ClCompile Include="modules\order\Order.ixx" />
+    <ClCompile Include="modules\portfolio\Portfolio.cpp" />
+    <ClCompile Include="modules\portfolio\Portfolio.ixx" />
+    <ClCompile Include="modules\portfolio\Position.cpp" />
+    <ClCompile Include="modules\portfolio\Position.ixx" />
+    <ClCompile Include="modules\portfolio\Trade.cpp" />
+    <ClCompile Include="modules\portfolio\Trade.ixx" />
     <ClCompile Include="modules\standard\AgisArrayUtils.ixx" />
-    <ClCompile Include="modules\standard\AgisError.ixx" />
     <ClCompile Include="modules\asset\Asset.Core.cpp" />
     <ClCompile Include="modules\asset\Asset.Core.ixx" />
     <ClCompile Include="modules\asset\Asset.Private.ixx" />
+    <ClCompile Include="modules\standard\AgisError.ixx" />
     <ClCompile Include="modules\standard\AgisFileUtils.ixx" />
     <ClCompile Include="modules\standard\AgisTimeUtils.ixx" />
+    <ClCompile Include="modules\strategy\Strategy.cpp" />
+    <ClCompile Include="modules\strategy\Strategy.ixx" />
+    <ClCompile Include="modules\strategy\StrategyTracer.cpp" />
+    <ClCompile Include="modules\strategy\StrategyTracer.ixx" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

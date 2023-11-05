@@ -46,6 +46,7 @@ public:
 	size_t get_index() const noexcept;
 	size_t rows() const noexcept;
 	size_t columns() const noexcept;
+	AssetState get_state() const noexcept { return _state;}
 	std::optional<double> get_market_price(bool is_close) const noexcept;
 	std::string const& get_id() const noexcept { return _asset_id;}
 	std::string const& get_dt_format() const noexcept { return _dt_format; }
@@ -57,6 +58,7 @@ public:
 private:
 	Asset(AssetPrivate* asset, std::string asset_id, size_t asset_index);
 
+	void reset() noexcept;
 	AssetState step(long long global_time) noexcept;
 
 	size_t _asset_index;

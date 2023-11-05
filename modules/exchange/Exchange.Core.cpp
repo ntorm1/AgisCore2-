@@ -7,8 +7,10 @@ module ExchangeModule;
 
 import <filesystem>;
 
+import PortfolioModule;
 import AssetModule;
 import AgisArrayUtils;
+import OrderModule;
 
 namespace fs = std::filesystem;
 
@@ -20,13 +22,18 @@ struct ExchangePrivate
 {
 	std::string exchange_id;
 	size_t exchange_index;
-	std::string dt_format;
+
 
 	AssetFactory* asset_factory;
 	std::vector<Asset*> assets;
 
+	std::vector<std::unique_ptr<Order>> orders;
+
 	std::vector<long long> dt_index;
+	long long current_dt = 0;
 	size_t current_index = 0;
+	std::string dt_format;
+	bool on_close = false;
 
 	ExchangePrivate(
 		std::string exchange_id,
@@ -116,6 +123,41 @@ std::expected<bool, AgisException> Exchange::load_assets() noexcept
 
 
 //============================================================================
+std::expected<bool, AgisException>
+Exchange::step(long long global_dt) noexcept
+{
+	if(this->_p->current_index >= this->_p->dt_index.size())
+	{
+		return true;
+	}
+	_p->current_dt = this->_p->dt_index[this->_p->current_index];
+	if (_p->current_dt != global_dt)
+	{
+		return true;
+	}
+	// move assets forward
+	for (auto& asset : this->_p->assets)
+	{
+		asset->step(global_dt);
+	}
+	// call next on portfolios registered to the exchange
+	_p->current_index++;
+	return true;
+}
+
+
+//============================================================================
+void
+Exchange::reset() noexcept
+{
+	for (auto& asset : this->_p->assets)
+	{
+		asset->reset();
+	}
+	this->_p->current_index = 0;
+}
+
+//============================================================================
 void Exchange::build() noexcept
 {
 	this->_p->dt_index.clear();
@@ -198,6 +240,127 @@ Exchange::get_asset(size_t asset_index) const noexcept
 		return std::nullopt;
 	}
 	return this->_p->assets[asset_index_offset];
+}
+
+
+//============================================================================
+std::optional<std::unique_ptr<Order>>
+Exchange::place_order(std::unique_ptr<Order> order) noexcept
+{
+	// make sure order is valid
+	if (!this->is_valid_order(order.get()))
+	{
+		order->reject(_p->current_dt);
+		return std::move(order);
+	}
+
+	// attempt to fill order
+	this->process_order(order.get());
+	if (order->get_order_state() == OrderState::FILLED)
+	{
+		return std::move(order);
+	}
+
+	// otherwise store order in open orders
+	order->set_order_state(OrderState::OPEN);
+	this->_p->orders.push_back(std::move(order));
+	return std::nullopt;
+}
+
+
+//============================================================================
+void Exchange::process_market_order(Order* order) noexcept
+{
+	// get asset index
+	auto asset_index = order->get_asset_index();
+	asset_index -= this->_index_offset;
+
+	// get asset
+	auto asset = this->_p->assets[asset_index];
+
+	// get asset price and fill if possible
+	auto price = asset->get_market_price(_p->on_close);
+	if (price)
+	{
+		order->fill(asset, price.value(), _p->current_dt);
+	}
+}
+
+
+//============================================================================
+void
+Exchange::process_order(Order* order) noexcept
+{
+	switch (order->get_order_type())
+	{
+	case OrderType::MARKET_ORDER:
+		this->process_market_order(order);
+		break;
+	}
+}
+
+//============================================================================
+void
+Exchange::process_orders() noexcept
+{
+	for (auto orderIt = this->_p->orders.begin(); orderIt != this->_p->orders.end();)
+	{
+		auto& order = *orderIt;
+		this->process_order(order.get());
+
+		if (order->get_order_state() != OrderState::OPEN) {
+			auto portfolio_index = order->get_portfolio_index();
+			auto portfolio = registered_portfolios[portfolio_index];
+			portfolio->process_order(std::move(order));
+
+			// swap current order with last order and pop back
+			std::iter_swap(orderIt, this->_p->orders.rbegin());
+			this->_p->orders.pop_back();
+		}
+		else 
+		{
+			++orderIt;
+		}
+	}
+}
+
+
+//============================================================================
+bool
+Exchange::is_valid_order(Order const* order) const noexcept
+{
+	// validate order state, must be pending
+	if (order->get_order_state() != OrderState::PENDING) 
+	{
+		return false;
+	}
+
+	// validate asset index 
+	auto asset_index = order->get_asset_index();
+	if (asset_index < this->_index_offset)
+	{
+		return false;
+	}
+	asset_index -= _index_offset;
+	if (asset_index >= this->_p->assets.size())
+	{
+		return false;
+	}
+
+	// validate portfolio index
+	auto portfolio_index = order->get_portfolio_index();
+	if (registered_portfolios.find(portfolio_index) == registered_portfolios.end())
+	{
+		return false;
+	}
+
+	// validate asset is streaming
+	auto asset = this->_p->assets[asset_index];
+	if (asset->get_state() != AssetState::STREAMING)
+	{
+		return false;
+	}
+	return true;
 }
 
 
