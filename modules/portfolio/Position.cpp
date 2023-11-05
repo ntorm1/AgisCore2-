@@ -139,6 +139,7 @@ Position::adjust(
 	}
 	// adjust position units
 	this->_units += order_units;
+	this->_nlv = this->_units * fill_price;
 	parent_adjust(order_units, fill_price);
 
 	//if strategy does not have a trade, create one
@@ -219,7 +220,6 @@ void Position::parent_adjust(double units, double price) noexcept
 		parent->_avg_price /= new_units;
 		parent->_units += units;
 		parent->_nlv = parent->_units * price;
-		parent->_unrealized_pnl = parent->_units * (price - parent->_avg_price);
 		if (units * existing_units < 0)
 		{
 			parent->_realized_pnl += (abs(units) * (price - parent->_avg_price));
@@ -256,7 +256,7 @@ void Position::evaluate(bool on_close, bool is_reprice) noexcept
 	if (!price_opt) return;
 	_last_price = price_opt.value();
 	_nlv = 0.0f;
-	_unrealized_pnl = _units*(_last_price - _avg_price);
+	_unrealized_pnl = _units * (_last_price -_avg_price);
 	if (on_close && !is_reprice) { this->_bars_held++; }
 
 	for(auto&[strategy_index, trade] : _trades)

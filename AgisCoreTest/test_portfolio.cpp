@@ -108,9 +108,9 @@ protected:
 		auto res_strat_2 = hydra->register_strategy(std::move(strategy_2));
 
 		strategy1 = dynamic_cast<DummyStrategy*>(hydra->get_strategy_mut(strategy_id_1).value());
-		strategy2 = dynamic_cast<DummyStrategy*>(hydra->get_strategy_mut(strategy_id_1).value());
+		strategy2 = dynamic_cast<DummyStrategy*>(hydra->get_strategy_mut(strategy_id_2).value());
 		strategy_index_1 = strategy1->get_strategy_index();
-auto	strategy_index_2 = strategy2->get_strategy_index();
+		strategy_index_2 = strategy2->get_strategy_index();
 	}
 };
 
@@ -205,8 +205,29 @@ TEST_F(PortfolioTest, OrderIncrease) {
 	strategy1->place_market_order(asset_id_2, units2);
 
 	auto master_position = master_portfolio->get_position(asset_id_2).value();
+	auto position1 = portfolio1->get_position(asset_id_2).value();
 	double master_nlv = (units1 + units2) * next_price;
+	auto unrealized_pnl = (next_price - market_price) * (units1);
 	EXPECT_DOUBLE_EQ(master_position->get_nlv(), master_nlv);
 	EXPECT_DOUBLE_EQ(master_position->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(master_position->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(position1->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(position1->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(position1->get_unrealized_pnl(), unrealized_pnl);
+	
+	auto position2 = portfolio2->get_position(asset_id_2);
+	EXPECT_FALSE(position2.has_value());
+
+	hydra->step();
+	double current_price = 97.0f;
+	master_nlv = (units1 + units2) * current_price;
+	double avg_price = (units1 * market_price + units2 * next_price) / (units1 + units2);
+	unrealized_pnl = (current_price - avg_price) * (units1 + units2);
+	EXPECT_DOUBLE_EQ(master_position->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(master_position->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(master_position->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(position1->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(position1->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(position1->get_unrealized_pnl(), unrealized_pnl);
 }
 

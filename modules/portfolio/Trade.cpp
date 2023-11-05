@@ -86,6 +86,7 @@ void Trade::adjust(Order const* filled_order)
 	{
 		this->reduce(filled_order);
 	}
+	_nlv = _units * filled_order->get_fill_price();
 }
 
 
