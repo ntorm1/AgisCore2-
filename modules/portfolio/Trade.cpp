@@ -16,6 +16,7 @@ std::atomic<size_t> Trade::_trade_counter(0);
 
 
 Trade::Trade(Strategy* strategy, Order const* order) noexcept
+	: _asset(*order->get_asset())
 {
 	_trade_id = _trade_counter++;
 	_strategy = strategy;

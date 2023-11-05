@@ -71,13 +71,13 @@ void StrategyTracers::starting_cash_add_assign(double v) noexcept
 {
 	this->starting_cash.fetch_add(v);
 	this->cash.fetch_add(v);
+	this->nlv.fetch_add(v);
 	if (portfolio)
 	{
 		auto parent = portfolio->get_parent_portfolio();
 		if(!parent) return;
 		auto p = parent.value();
 		p->_tracers.starting_cash_add_assign(v);
-		p->_tracers.cash_add_assign(v);
 	}
 }
 
@@ -114,7 +114,9 @@ void StrategyTracers::unrealized_pnl_add_assign(double v) noexcept
 	this->unrealized_pnl.fetch_add(v);
 	if (portfolio)
 	{
-		portfolio->_tracers.unrealized_pnl_add_assign(v);
+		auto parent = portfolio->get_parent_portfolio();
+		if (!parent) return;
+		parent.value()->_tracers.unrealized_pnl_add_assign(v);
 	}
 }
 

@@ -47,6 +47,31 @@ Portfolio::Portfolio(
 //============================================================================
 Portfolio::~Portfolio()
 {
+	for (auto& trade : _trade_history)
+	{
+		delete trade;
+	}
+}
+
+
+//============================================================================
+std::optional<Position const*>
+Portfolio::get_position(std::string const& asset_id) const noexcept
+{
+	// get the asset index from the exchange map or exchange
+	std::optional<size_t> asset_index;
+	if (_exchange_map) asset_index = _exchange_map.value()->get_asset_index(asset_id);
+	else asset_index = _exchange->get_asset_index(asset_id);
+
+	if(!asset_index) return std::nullopt;
+
+	// find the position in the portfolio
+	auto it = _positions.find(asset_index.value());
+	if (it == _positions.end())
+	{
+		return std::nullopt;
+	}
+	return it->second.get();
 }
 
 
@@ -116,7 +141,6 @@ Portfolio::evaluate(bool on_close, bool is_reprice)
 			filled_orders.push_back(std::move(order));
 		}
 	}
-	_tracers.nlv_add_assign(_tracers.get(Tracer::CASH).value());
 
 	for (auto& order : filled_orders)
 	{
@@ -209,10 +233,16 @@ Portfolio::process_filled_order(Order* order)
 {
 	std::unique_lock<std::shared_mutex> lock(_mutex);
 
-	auto position_opt = get_position(order->get_asset_index());
+	auto position_opt = get_position_mut(order->get_asset_index());
 	if (!position_opt)
 	{
 		this->open_position(order);
+		if (_parent_portfolio) 
+		{
+			auto strategy_index = order->get_strategy_index();
+			auto trade = this->get_trade_mut(order->get_asset_index(), strategy_index).value();
+			_parent_portfolio.value()->open_position(trade);
+		}	
 	}
 	else
 	{
@@ -242,6 +272,12 @@ Portfolio::process_filled_order(Order* order)
 			this->adjust_position(order, position);
 		}
 		else this->close_position(order, position);
+
+		lock.unlock();
+		if (_parent_portfolio)
+		{
+			process_filled_order(order);
+		}
 	}
 	// adjust cash levels required by the order. Intial call on the base portfolio will adjust
 	// cash levels all the way up the portfolio tree
@@ -250,12 +286,6 @@ Portfolio::process_filled_order(Order* order)
 	{
 		_tracers.cash_add_assign(-cash_adjustment);
 		order->get_strategy_mut()->_tracers.cash_add_assign(-cash_adjustment);
-	}
-	// propogate the order up the portfolio tree and drop the lock on this portfolio
-	lock.unlock();
-	if (_parent_portfolio)
-	{
-		_parent_portfolio.value()->process_filled_order(order);
 	}
 }
 
@@ -282,10 +312,12 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 {
 	position->close(order);
 	auto& trades = position->get_trades();
-	for (auto& trade : trades)
+	for (auto& [strategy_index, trade] : trades)
 	{
-		_trade_history.push_back(std::move(trade.second));
+		if(trade->get_portfolio_index() == _portfolio_index)
+		_trade_history.push_back(trade);
 	}
+	
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
 	auto it = _positions.find(order->get_asset_index());
 	_positions.erase(order->get_asset_index());
@@ -294,10 +326,58 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 
 
 //============================================================================
+void Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
+{
+	auto position = get_position_mut(asset_index).value();
+	position->close_trade(strategy_index);
+	while (_parent_portfolio) {
+		_parent_portfolio.value()->close_trade(asset_index, strategy_index);
+	}
+}
+
+
+//============================================================================
+void Portfolio::insert_trade(Trade* trade) noexcept
+{
+	auto position = get_position_mut(trade->get_asset_index()).value();
+	position->adjust(trade);
+	while (_parent_portfolio) {
+		_parent_portfolio.value()->insert_trade(trade);
+	}
+}
+
+
+//============================================================================
 void
 Portfolio::adjust_position(Order* order, Position* position) noexcept
 {
+	auto history_size = _trade_history.size();
+	auto init_trade_opt = position->get_trade_mut(order->get_strategy_index());
 	position->adjust(order->get_strategy_mut(), order, _trade_history);
+	
+	if (!_parent_portfolio) return;
+
+	// if the trade was closed then remove it from the trade history and propogate close up
+	if (_trade_history.size() > history_size)
+	{
+		auto trade = _trade_history.back();
+		_parent_portfolio.value()->close_trade(trade->get_asset_index(), trade->get_strategy_index());
+		return;
+	}
+	// if trade is new then insert it up the tree
+	auto trade = position->get_trade_mut(order->get_strategy_index()).value();
+	if (!init_trade_opt)
+	{
+		_parent_portfolio.value()->insert_trade(trade);
+	}
+	// if trade was reversed then there is a new trade pointer 
+	else if (init_trade_opt.value() != trade)
+	{
+		auto asset_index = trade->get_asset_index();
+		auto strategy_index = trade->get_strategy_index();
+		_parent_portfolio.value()->close_trade(asset_index, strategy_index);
+		_parent_portfolio.value()->insert_trade(trade);
+	}
 }
 
 
@@ -309,6 +389,20 @@ Portfolio::open_position(Order const* order) noexcept
 		order->get_asset_index(),
 		std::make_unique<Position>(order->get_strategy_mut(), order)
 	);
+}
+
+
+//============================================================================
+void
+Portfolio::open_position(Trade* trade) noexcept
+{
+	_positions.emplace(
+		trade->get_asset_index(),
+		std::make_unique<Position>(trade->get_strategy_mut(), trade)
+	);
+	while (_parent_portfolio) {
+		_parent_portfolio.value()->open_position(trade);
+	}
 }
 
 
@@ -325,7 +419,7 @@ Portfolio::get_exchange() const noexcept
 
 //============================================================================
 std::optional<Position*>
-Portfolio::get_position(size_t asset_index) const noexcept
+Portfolio::get_position_mut(size_t asset_index) const noexcept
 {
 	auto it = _positions.find(asset_index);
 	if (it == _positions.end())
@@ -333,6 +427,15 @@ Portfolio::get_position(size_t asset_index) const noexcept
 		return std::nullopt;
 	}
 	return it->second.get();
+}
+
+
+//============================================================================
+std::optional<Trade*> Portfolio::get_trade_mut(size_t asset_index, size_t strategy_index) const noexcept
+{
+	auto position = get_position_mut(asset_index);
+	if (!position) return std::nullopt;
+	return position.value()->get_trade_mut(strategy_index);
 }
 
 

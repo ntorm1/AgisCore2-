@@ -64,6 +64,7 @@ protected:
 
 public:
 	AGIS_API double get_cash() const noexcept;
+	AGIS_API size_t get_strategy_index();
 	AGIS_API std::string const& get_strategy_id() const noexcept{ return _strategy_id; }
 
 };

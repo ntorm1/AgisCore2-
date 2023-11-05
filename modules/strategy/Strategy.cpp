@@ -104,6 +104,13 @@ Strategy::get_cash() const noexcept
 
 
 //============================================================================
+size_t Strategy::get_strategy_index()
+{
+	return _p->strategy_index;
+}
+
+
+//============================================================================
 void Strategy::reset() noexcept
 {
 	_p->trades.clear();

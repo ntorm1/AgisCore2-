@@ -45,19 +45,23 @@ private:
     /// <summary>
     /// Mapping between strategy id and trade object.
     /// </summary>
-    ankerl::unordered_dense::map<size_t, std::unique_ptr<Trade>> _trades;
+    ankerl::unordered_dense::map<size_t, Trade*> _trades;
 
     void adjust(
         Strategy* strategy,
         Order* order,
-        std::vector<std::unique_ptr<Trade>>& trades
+        std::vector<Trade*>& trade_history
     ) noexcept;
+    void adjust(Trade* trade) noexcept;
     void close(Order const* order) noexcept;
+
     void evaluate(bool on_close, bool is_reprice) noexcept;
     bool is_last_row();
     std::unique_ptr<Order> generate_position_inverse_order() const noexcept;
     auto& get_trades() noexcept { return this->_trades; }
-    std::optional<Trade*> get_trade(size_t strategy_index) const noexcept;
+    void clear_trades() noexcept { this->_trades.clear(); }
+    void close_trade(size_t strategy_index) noexcept;
+    std::optional<Trade*> get_trade_mut(size_t strategy_index) const noexcept;
     double get_unrealized_pnl() const noexcept { return this->_unrealized_pnl; }
 
 public:
@@ -65,12 +69,18 @@ public:
         Strategy* strategy,
         Order const* order
     ) noexcept;
+    Position(
+        Strategy* strategy,
+        Trade* trade
+    ) noexcept;
 
-    [[nodiscard]] double get_nlv() const { return this->_nlv; }
-    [[nodiscard]] double get_unrealized_pl() const { return this->_unrealized_pnl; }
-    [[nodiscard]] double get_realized_pl() const { return this->_realized_pnl; }
-    [[nodiscard]] double get_units() const { return this->_units; }
-    [[nodiscard]] bool trade_exists(size_t strategy_index) const noexcept;
+    AGIS_API [[nodiscard]] double get_avg_price() const { return this->_avg_price; }
+    AGIS_API [[nodiscard]] double get_nlv() const { return this->_nlv; }
+    AGIS_API [[nodiscard]] double get_unrealized_pl() const { return this->_unrealized_pnl; }
+    AGIS_API [[nodiscard]] double get_realized_pl() const { return this->_realized_pnl; }
+    AGIS_API [[nodiscard]] double get_units() const { return this->_units; }
+    AGIS_API [[nodiscard]] bool trade_exists(size_t strategy_index) const noexcept;
+    AGIS_API [[nodiscard]] std::optional<Trade const*> get_trade(size_t strategy_index) const noexcept;
 
 };
 

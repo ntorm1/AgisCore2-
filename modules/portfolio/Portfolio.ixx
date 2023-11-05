@@ -44,7 +44,7 @@ private:
 	std::optional<ExchangeMap*>	_exchange_map = std::nullopt;
 	Exchange*					_exchange = nullptr;
 
-	std::vector<std::unique_ptr<Trade>>		_trade_history;
+	std::vector<Trade*>						_trade_history;
 	std::vector<std::unique_ptr<Position>>	_position_history;
 	std::vector<std::unique_ptr<Order>>		_order_history;
 
@@ -68,12 +68,16 @@ private:
 	void process_order(std::unique_ptr<Order> order);
 
 	void close_position(Order const* order, Position* position) noexcept;
+	void close_trade(size_t asset_index, size_t strategy_index) noexcept;
+	void insert_trade(Trade* trade) noexcept;
 	void adjust_position(Order* order, Position* position) noexcept;
 	void open_position(Order const* order) noexcept;
+	void open_position(Trade* trade) noexcept;
 
 	std::optional<Portfolio*> get_parent_portfolio() const noexcept { return _parent_portfolio;}
 	std::optional<Exchange const*> get_exchange() const noexcept;
-	std::optional<Position*> get_position(size_t asset_index) const noexcept;
+	std::optional<Position*> get_position_mut(size_t asset_index) const noexcept;
+	std::optional<Trade*> get_trade_mut(size_t asset_index, size_t strategy_index) const noexcept;
 
 public:
 	Portfolio(
@@ -85,7 +89,11 @@ public:
 		double cash
 	);
 	~Portfolio();
-	size_t get_portfolio_index() const noexcept { return _portfolio_index; }
+	
+	AGIS_API size_t get_portfolio_index() const noexcept { return _portfolio_index; }
+	AGIS_API std::optional<Position const*> get_position(std::string const& asset_id) const noexcept;
+
+
 	bool position_exists(size_t asset_index) const noexcept;
 	bool trade_exists(size_t asset_index, size_t strategy_index) const noexcept;
 	AGIS_API double get_cash() const noexcept;

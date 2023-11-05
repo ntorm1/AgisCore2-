@@ -69,6 +69,7 @@ public:
 
 	AGIS_API [[nodiscard]] std::optional<double> get_market_price(std::string const& asset_id, bool close) const noexcept;
 	AGIS_API [[nodiscard]] std::expected<Asset const*, AgisException> get_asset(std::string const& id) const noexcept;
+	AGIS_API [[nodiscard]] std::optional<size_t> get_asset_index(std::string const& id) const noexcept;
 	AGIS_API [[nodiscard]] std::expected<Exchange const*, AgisException> get_exchange(std::string const& id) const noexcept;
 	AGIS_API long long get_global_time() const noexcept;
 	[[nodiscard]] std::vector<long long> const& get_dt_index() const noexcept;

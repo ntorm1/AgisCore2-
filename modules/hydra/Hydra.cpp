@@ -123,6 +123,7 @@ Hydra::get_strategy_mut(std::string const& strategy_id) const noexcept
 std::optional<Portfolio const*>
 Hydra::get_portfolio(std::string const& portfolio_id) const noexcept
 {
+	if(portfolio_id == "master") return &_p->master_portfolio;
 	auto it = _p->portfolios.find(portfolio_id);
 	if (it == _p->portfolios.end()) return std::nullopt;
 	return it->second;

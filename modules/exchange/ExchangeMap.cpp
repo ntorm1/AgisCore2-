@@ -173,6 +173,18 @@ ExchangeMap::get_asset(std::string const& id) const noexcept
 
 
 //============================================================================
+std::optional<size_t>
+ExchangeMap::get_asset_index(std::string const& id) const noexcept
+{
+	if (_p->asset_indecies.count(id) == 0)
+	{
+		return std::nullopt;
+	}
+	return _p->asset_indecies.at(id);
+}
+
+
+//============================================================================
 std::expected<Exchange const*, AgisException>
 ExchangeMap::get_exchange(std::string const& id) const noexcept
 {
