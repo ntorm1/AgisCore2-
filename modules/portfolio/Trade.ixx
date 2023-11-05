@@ -24,6 +24,7 @@ private:
     static std::atomic<size_t> _trade_counter;
     Strategy*       _strategy;
     Portfolio*      _portfolio;
+    Position*       _parent_position;
     Asset const&    _asset;
     double _units;
     double _avg_price;
@@ -52,7 +53,7 @@ private:
     Strategy* get_strategy_mut() const { return _strategy; }
 
 public:
-    Trade(Strategy* strategy, Order const* order) noexcept;
+    Trade(Strategy* strategy, Order const* order, Position* parent_position) noexcept;
     ~Trade() = default;
     AGIS_API size_t get_portfolio_index() const { return _portfolio_index; }
     AGIS_API size_t get_asset_index() const { return _asset_index; }

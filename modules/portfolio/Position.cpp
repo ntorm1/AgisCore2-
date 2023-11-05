@@ -44,7 +44,8 @@ Position::Position(Strategy* strategy, Order const* order) noexcept
 
 	auto trade = new Trade(
 		strategy,
-		order
+		order,
+		this
 	);
 	_trades.insert({ _strategy_index, trade});
 	strategy->add_trade(trade);
@@ -141,7 +142,8 @@ Position::adjust(
 	{
 		auto trade = new Trade(
 			strategy,
-			order
+			order,
+			this
 		);
 		this->_trades.insert({ strategy_index,trade});
 		strategy->add_trade(trade);
@@ -179,7 +181,8 @@ Position::adjust(
 				order->set_units(units_left);
 				auto trade = new Trade(
 					strategy,
-					order
+					order,
+					this
 				);
 				this->_trades.insert({ strategy_index, trade });
 				strategy->add_trade(trade);

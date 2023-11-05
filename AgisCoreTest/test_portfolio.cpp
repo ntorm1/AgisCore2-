@@ -162,8 +162,29 @@ TEST_F(PortfolioTest, OrderEval) {
 	hydra->step();
 	double units = 1.0f;
 	double market_price = 101.5;
+	double next_price = 99.0f;
 	auto strategy_ptr = hydra->get_strategy_mut(strategy_id_1).value();
 	auto strategy_dummy = dynamic_cast<DummyStrategy*>(strategy_ptr);
+	auto strategy_index = strategy_dummy->get_strategy_index();
 	strategy_dummy->place_market_order(asset_id_2, units);
 
+	hydra->step();
+
+	auto master_position = master_portfolio->get_position(asset_id_2).value();
+	auto portfolio1_position = portfolio1->get_position(asset_id_2).value();
+	auto trade_master = master_position->get_trade(strategy_index).value();
+	double trade_nlv = units * next_price;
+	double unrealized_pnl = (next_price - market_price) * units;
+	EXPECT_DOUBLE_EQ(trade_master->get_nlv(), trade_nlv);
+	EXPECT_DOUBLE_EQ(master_position->get_nlv(), trade_nlv);
+	EXPECT_DOUBLE_EQ(portfolio1_position->get_nlv(), trade_nlv);
+	EXPECT_DOUBLE_EQ(trade_master->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(master_position->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(portfolio1_position->get_unrealized_pnl(), unrealized_pnl);
+
+	double nlv_1 = cash1 + unrealized_pnl;
+	double nlv_master = cash1 + cash2 + unrealized_pnl;
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), nlv_1);
+	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), cash2);
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), nlv_master);
 }

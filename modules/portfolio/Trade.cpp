@@ -8,6 +8,7 @@ module TradeModule;
 import StrategyModule;
 import OrderModule;
 import PortfolioModule;
+import PositionModule;
 
 namespace Agis
 {
@@ -15,8 +16,8 @@ namespace Agis
 std::atomic<size_t> Trade::_trade_counter(0);
 
 
-Trade::Trade(Strategy* strategy, Order const* order) noexcept
-	: _asset(*order->get_asset())
+Trade::Trade(Strategy* strategy, Order const* order, Position* parent_position) noexcept
+	: _asset(*order->get_asset()), _parent_position(parent_position)
 {
 	_trade_id = _trade_counter++;
 	_strategy = strategy;
@@ -94,13 +95,17 @@ Trade::evaluate(double market_price, bool on_close, bool is_reprice)
 {
 	auto nlv_new = _units * market_price;
 	auto unrealized_pl_new = _units * (market_price - _avg_price);
+	auto nlv_adjustment = nlv_new - _nlv;
+	auto unrealized_pl_adjustment = unrealized_pl_new - _unrealized_pnl;
+	_parent_position->_nlv += nlv_adjustment;
+	_parent_position->_unrealized_pnl += unrealized_pl_adjustment;
 
 	// adjust strategy levels 
 	_strategy->_tracers.nlv_add_assign(nlv_new);
 	_strategy->_tracers.unrealized_pnl_add_assign(unrealized_pl_new - _unrealized_pnl);
 	_portfolio->_tracers.nlv_add_assign(nlv_new);
 	_portfolio->_tracers.unrealized_pnl_add_assign(unrealized_pl_new - _unrealized_pnl);
-
+	
 	_nlv = nlv_new;
 	_unrealized_pnl = unrealized_pl_new;
 	_last_price = market_price;

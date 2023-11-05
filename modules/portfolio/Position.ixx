@@ -19,6 +19,7 @@ namespace Agis
 
 export class Position
 {
+    friend class Trade;
     friend class Portfolio;
 private:
 	static std::atomic<size_t> _position_counter;
@@ -62,7 +63,6 @@ private:
     void clear_trades() noexcept { this->_trades.clear(); }
     void close_trade(size_t strategy_index) noexcept;
     std::optional<Trade*> get_trade_mut(size_t strategy_index) const noexcept;
-    double get_unrealized_pnl() const noexcept { return this->_unrealized_pnl; }
 
 public:
     Position(
@@ -74,6 +74,10 @@ public:
         Trade* trade
     ) noexcept;
 
+    Position(Position const&) = delete;
+    Position& operator=(Position const&) = delete;
+
+    AGIS_API [[nodiscard]] double get_unrealized_pnl() const noexcept { return this->_unrealized_pnl; }
     AGIS_API [[nodiscard]] double get_avg_price() const { return this->_avg_price; }
     AGIS_API [[nodiscard]] double get_nlv() const { return this->_nlv; }
     AGIS_API [[nodiscard]] double get_unrealized_pl() const { return this->_unrealized_pnl; }
