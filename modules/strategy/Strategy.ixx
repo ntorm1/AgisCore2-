@@ -20,7 +20,6 @@ import StrategyTracerModule;
 namespace Agis
 {
 
-struct StrategyPrivate;
 
 export class Strategy
 {
@@ -35,8 +34,7 @@ private:
 	StrategyTracers _tracers;
 	std::optional<AgisException> _exception;
 	Exchange const& _exchange;
-	Portfolio const& _portfolio;
-
+	
 	void add_trade(Trade const* trade);
 	void remove_trade(size_t asset_index);
 
@@ -48,7 +46,7 @@ private:
 		size_t index,
 		double cash,
 		Exchange const& exchange,
-		Portfolio const& portfolio
+		Portfolio& portfolio
 	);
 
 
@@ -57,7 +55,7 @@ protected:
 
 	size_t get_strategy_index() const noexcept;
 	double get_cash() const noexcept;
-	Portfolio* get_portfolio() const noexcept { return const_cast<Portfolio*>(&_portfolio); }
+	Portfolio* get_portfolio() const noexcept;
 
 	void reset() noexcept;
 	virtual std::expected<bool,AgisException> step() = 0;

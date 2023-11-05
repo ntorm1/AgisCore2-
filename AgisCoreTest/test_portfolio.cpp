@@ -56,7 +56,17 @@ protected:
 };
 
 
-TEST_F(PortfolioTest, ExchangeCreate) {
+TEST_F(PortfolioTest, PortfolioCreate) {
 	EXPECT_TRUE(hydra->get_portfolio(portfolio_id_1).has_value());
 	EXPECT_TRUE(hydra->get_portfolio(portfolio_id_2).has_value());
 }
+
+TEST_F(PortfolioTest, PortfolioStep) {
+	hydra->build();
+	hydra->step();
+
+	auto p1 = hydra->get_portfolio(portfolio_id_1).value();
+	EXPECT_DOUBLE_EQ(p1->get_cash(), 0.0f);
+	EXPECT_DOUBLE_EQ(p1->get_nlv(), 0.0f);
+}
+

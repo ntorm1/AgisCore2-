@@ -123,6 +123,14 @@ std::expected<bool, AgisException> Exchange::load_assets() noexcept
 
 
 //============================================================================
+void
+Exchange::register_portfolio(Portfolio* p) noexcept
+{
+	registered_portfolios.emplace(p->get_portfolio_index(), p);
+}
+
+
+//============================================================================
 std::expected<bool, AgisException>
 Exchange::step(long long global_dt) noexcept
 {
@@ -140,7 +148,11 @@ Exchange::step(long long global_dt) noexcept
 	{
 		asset->step(global_dt);
 	}
-	// call next on portfolios registered to the exchange
+	// flag portfolios to call next step
+	for (auto& portfolio : registered_portfolios)
+	{
+		portfolio.second->_step_call = true;
+	}
 	_p->current_index++;
 	return true;
 }
@@ -178,6 +190,19 @@ std::vector<Asset*>& Exchange::get_assets_mut() noexcept
 	return _p->assets;
 }
 
+
+//============================================================================
+size_t
+Exchange::get_exchange_index() const noexcept
+{
+	return _p->exchange_index;
+}
+
+//============================================================================
+long long Exchange::get_dt() const noexcept
+{
+	return _p->current_dt;
+}
 
 //============================================================================
 std::vector<long long> const&
@@ -301,8 +326,9 @@ Exchange::process_order(Order* order) noexcept
 
 //============================================================================
 void
-Exchange::process_orders() noexcept
+Exchange::process_orders(bool on_close) noexcept
 {
+	_p->on_close = on_close;
 	for (auto orderIt = this->_p->orders.begin(); orderIt != this->_p->orders.end();)
 	{
 		auto& order = *orderIt;

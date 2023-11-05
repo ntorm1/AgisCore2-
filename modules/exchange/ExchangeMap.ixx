@@ -51,7 +51,7 @@ private:
 	std::expected<bool, AgisException> step() noexcept;
 	std::expected<bool, AgisException> build() noexcept;
 	void reset() noexcept;
-
+	void process_orders(bool on_close) noexcept;
 	[[nodiscard]] std::expected<Exchange const*, AgisException> create_exchange(
 		std::string exchange_id,
 		std::string dt_format,

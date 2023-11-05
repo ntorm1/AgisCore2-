@@ -122,6 +122,19 @@ ExchangeMap::reset() noexcept
 
 
 //============================================================================
+void ExchangeMap::process_orders(bool on_close) noexcept
+{
+	for (auto& exchange : _p->exchanges)
+	{
+		if (exchange->get_dt() == _p->global_dt)
+		{
+			exchange->process_orders(on_close);
+		}
+	}
+}
+
+
+//============================================================================
 std::expected<bool, AgisException>
 ExchangeMap::step() noexcept
 {

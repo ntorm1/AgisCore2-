@@ -29,6 +29,7 @@ export class Exchange
 {
 	friend class ExchangeFactory;
 	friend class ExchangeMap;
+	friend class Portfolio;
 private:
 	std::string _source;
 	ExchangePrivate* _p;
@@ -56,15 +57,15 @@ private:
 
 	std::expected<bool, AgisException> load_folder() noexcept;
 	std::expected<bool, AgisException> load_assets() noexcept;
-	
 	[[nodiscard]] std::expected<bool, AgisException> step(long long global_dt) noexcept;
+	void register_portfolio(Portfolio* p) noexcept;
 	void reset() noexcept;
 	void build() noexcept;
 	std::optional<std::unique_ptr<Order>> place_order(std::unique_ptr<Order> order) noexcept;
 	
 	void process_market_order(Order* order) noexcept;
 	void process_order(Order* order) noexcept;
-	void process_orders() noexcept;
+	void process_orders(bool on_close) noexcept;
 
 	bool is_valid_order(Order const* order) const noexcept;
 	
@@ -76,8 +77,8 @@ public:
 
 	Exchange(Exchange const&) = delete;
 	Exchange& operator=(Exchange const&) = delete;
-
-	// ==== const functions ==== //
+	size_t get_exchange_index() const noexcept;
+	long long get_dt() const noexcept;
 	std::vector<long long> const& get_dt_index() const noexcept;
 	std::vector<Asset*> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;

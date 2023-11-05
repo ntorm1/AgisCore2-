@@ -10,20 +10,32 @@ module StrategyModule;
 import <string>;
 
 import TradeModule;
+import OrderModule;
+import ExchangeModule;
+import PortfolioModule;
 import StrategyTracerModule;
 
 namespace Agis
 {
 
-struct StrategyPrivate
+class StrategyPrivate
 {
-	std::string id;
-	size_t index;
+public:
+	Portfolio& portfolio;
+	std::string strategy_id;
+	size_t strategy_index;
+	size_t portfolio_index;
+	size_t exchange_index;
 	ankerl::unordered_dense::map<size_t, Trade const*> trades;
 
-	StrategyPrivate(std::string id , size_t index)
-		: id(id), index(index)
+	StrategyPrivate(Portfolio& p, std::string id , size_t index)
+		: strategy_id(id), strategy_index(index), portfolio(p)
 	{}
+
+	void place_order(std::unique_ptr<Order> order)
+	{
+		portfolio.place_order(std::move(order));
+	}
 };
 
 //============================================================================
@@ -32,11 +44,21 @@ Strategy::Strategy(
 	size_t index,
 	double cash,
 	Exchange const& exchange,
-	Portfolio const& portfolio
+	Portfolio& portfolio
 	): 
-	_exchange(exchange), _portfolio(portfolio), _tracers(this, cash)
+	_exchange(exchange), _tracers(this, cash)
 {
-	_p = new StrategyPrivate(id, index);
+	_p = new StrategyPrivate(portfolio, id, index);
+	_p->portfolio_index = portfolio.get_portfolio_index();
+	_p->exchange_index = exchange.get_exchange_index();
+}
+
+
+//============================================================================
+Portfolio*
+Strategy::get_portfolio() const noexcept 
+{
+	return const_cast<Portfolio*>(&_p->portfolio); 
 }
 
 
@@ -44,14 +66,22 @@ Strategy::Strategy(
 void
 Strategy::place_market_order(size_t asset_index, double units)
 {
-	
+	auto order = std::make_unique<Order>(
+		OrderType::MARKET_ORDER,
+		asset_index,
+		units,
+		_p->strategy_index,
+		_p->exchange_index,
+		_p->portfolio_index
+	);
+	_p->place_order(std::move(order));
 }
 
 
 //============================================================================
 size_t Strategy::get_strategy_index() const noexcept
 {
-	return _p->index;
+	return _p->strategy_index;
 }
 
 //============================================================================

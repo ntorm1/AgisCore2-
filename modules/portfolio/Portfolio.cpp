@@ -8,6 +8,7 @@ module PortfolioModule;
 
 import OrderModule;
 import PositionModule;
+import ExchangeModule;
 import ExchangeMapModule;
 import TradeModule;
 import StrategyModule;
@@ -38,6 +39,7 @@ Portfolio::Portfolio(
 	if (exchange)
 	{
 		_exchange = exchange.value();
+		_exchange->register_portfolio(this);
 	}
 }
 
@@ -130,6 +132,7 @@ Portfolio::evaluate(bool on_close, bool is_reprice)
 std::expected<bool, AgisException>
 Portfolio::step()
 {
+	if (!_step_call) return true;
 	for (auto& strategy_pair : _strategies) {
 		auto strategy = strategy_pair.second.get();
 		_task_group.run([strategy]() {
@@ -142,6 +145,7 @@ Portfolio::step()
 			}
 		});
 	}
+	_step_call = false;
 	return true;
 }
 
@@ -182,6 +186,21 @@ Portfolio::add_strategy(std::unique_ptr<Strategy> strategy)
 		std::move(strategy)
 	);
 	return true;
+}
+
+
+//============================================================================
+void
+Portfolio::place_order(std::unique_ptr<Order> order) noexcept
+{
+	auto o = order.get();
+	if (!_exchange) return;
+	auto res = _exchange->place_order(std::move(order));
+	if(res)
+	{
+		auto order_state = order->get_order_state();
+		this->process_order(std::move(order));
+	}
 }
 
 
@@ -252,6 +271,7 @@ void Portfolio::process_order(std::unique_ptr<Order> order)
 	default:
 		break;
 	}
+	auto lock = std::lock_guard(_mutex);
 	_order_history.push_back(std::move(order));
 }
 
@@ -333,6 +353,21 @@ Portfolio::trade_exists(size_t asset_index, size_t strategy_index) const noexcep
 		return false;
 	}
 	return it->second->trade_exists(strategy_index);
+}
+
+
+//============================================================================
+double
+Portfolio::get_cash() const noexcept
+{
+	return _tracers.get(Tracer::CASH).value();
+}
+
+
+//============================================================================
+double Portfolio::get_nlv() const noexcept
+{
+	return _tracers.get(Tracer::NLV).value();
 }
 
 }

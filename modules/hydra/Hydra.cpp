@@ -20,6 +20,7 @@ struct HydraPrivate
 	ankerl::unordered_dense::map<std::string, Portfolio*> portfolios;
 	Portfolio master_portfolio;
 	tbb::task_group pool;
+	bool built = false;
 
 	HydraPrivate()
 		: exchanges()
@@ -47,18 +48,52 @@ Hydra::~Hydra()
 
 
 //============================================================================
+std::expected<bool, AgisException> 
+Hydra::run(std::string const& path) noexcept
+{
+	if(!_p->built)
+	{
+		AGIS_ASSIGN_OR_RETURN(res, build());
+	}
+	this->reset();
+	auto index = _p->exchanges.get_dt_index();
+	for (size_t i = 0; i < index.size(); ++i)
+	{
+		AGIS_ASSIGN_OR_RETURN(res, step());
+	}
+	return true;
+}
+
+
+//============================================================================
 std::expected<bool, AgisException>
 Hydra::build() noexcept
 {
 	AGIS_ASSIGN_OR_RETURN(res, _p->exchanges.build());
+	_p->built = true;
 	return true;
 }
 
 std::expected<bool, AgisException>
 Hydra::step() noexcept
 {
-	 _p->exchanges.step();
-	 return true;
+	// step assets and exchanges forward in time
+	_p->exchanges.step();
+
+	// evaluate master portfolio at current time and prices
+	_p->master_portfolio.evaluate(true, true);
+	
+	// step portfolios forward in time and call strategy next as needed
+	AGIS_ASSIGN_OR_RETURN(res,_p->master_portfolio.step());
+	_p->pool.wait();
+
+	// process any open orders
+	_p->exchanges.process_orders(true);
+
+	// evaluate master portfolio at current time and prices
+	_p->master_portfolio.evaluate(true, false);
+
+	return true;
 }
 
 
@@ -67,6 +102,7 @@ std::expected<bool, AgisException>
 Hydra::reset() noexcept
 {
 	_p->exchanges.reset();
+	_p->master_portfolio.reset();
 	return true;
 }
 
@@ -146,6 +182,7 @@ Hydra::create_portfolio(
 std::expected<Exchange const*, AgisException>
 Hydra::create_exchange(std::string exchange_id, std::string dt_format, std::string source)
 {
+	_p->built = false;
 	return _p->exchanges.create_exchange(exchange_id, dt_format, source);
 }
 

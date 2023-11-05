@@ -31,7 +31,7 @@ private:
 public:
 	AGIS_API Hydra();
 	AGIS_API ~Hydra();
-
+	AGIS_API [[nodiscard]] std::expected<bool, AgisException> run(std::string const& path) noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> build() noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> step() noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> reset() noexcept;

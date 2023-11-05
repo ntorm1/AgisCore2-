@@ -28,9 +28,11 @@ export class Portfolio
 	friend class Exchange;
 	friend class Trade;
 	friend class StrategyTracers;
+	friend class StrategyPrivate;
 private:
 	mutable std::shared_mutex _mutex;
 	size_t		_portfolio_index;
+	bool _step_call = false;
 	std::string _portfolio_id;
 
 	ankerl::unordered_dense::map<size_t, std::unique_ptr<Position>>		_positions;
@@ -61,7 +63,7 @@ private:
 		double cash
 	);
 	std::expected<bool, AgisException> add_strategy(std::unique_ptr<Strategy>);
-
+	void place_order(std::unique_ptr<Order> order) noexcept;
 	void process_filled_order(Order* order);
 	void process_order(std::unique_ptr<Order> order);
 
@@ -83,8 +85,11 @@ public:
 		double cash
 	);
 	~Portfolio();
+	size_t get_portfolio_index() const noexcept { return _portfolio_index; }
 	bool position_exists(size_t asset_index) const noexcept;
 	bool trade_exists(size_t asset_index, size_t strategy_index) const noexcept;
+	AGIS_API double get_cash() const noexcept;
+	AGIS_API double get_nlv() const noexcept;
 
 };
 
