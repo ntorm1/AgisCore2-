@@ -76,6 +76,8 @@ private:
 
 	std::optional<Portfolio*> get_parent_portfolio() const noexcept { return _parent_portfolio;}
 	std::optional<Exchange const*> get_exchange() const noexcept;
+	void set_child_portfolio_position_parents(Position* p) noexcept;
+	std::optional<Position*> get_parent_position(size_t asset_index) const noexcept;
 	std::optional<Position*> get_position_mut(size_t asset_index) const noexcept;
 	std::optional<Trade*> get_trade_mut(size_t asset_index, size_t strategy_index) const noexcept;
 

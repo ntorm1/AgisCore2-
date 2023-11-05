@@ -21,8 +21,11 @@ std::atomic<size_t> Position::_position_counter(0);
 
 
 //============================================================================
-Position::Position(Strategy* strategy, Order const* order) noexcept
-	: _asset(*order->get_asset())
+Position::Position(
+	Strategy* strategy,
+	Order const* order,
+	std::optional<Position*> parent_position) noexcept
+	: _asset(*order->get_asset()), parent_position(parent_position)
 {
 	_position_id = _position_counter++;
 	_units = order->get_units();
@@ -53,8 +56,11 @@ Position::Position(Strategy* strategy, Order const* order) noexcept
 
 
 //============================================================================
-Position::Position(Strategy* strategy, Trade* trade) noexcept
-	: _asset(trade->get_asset())
+Position::Position(
+	Strategy* strategy,
+	Trade* trade,
+	std::optional<Position*> parent_position) noexcept
+	: _asset(trade->get_asset()), parent_position(parent_position)
 {
 	_position_id = _position_counter++;
 	_units = trade->get_units();
@@ -125,7 +131,6 @@ Position::adjust(
 			(abs(order_units) * fill_price)
 			);
 		this->_avg_price /= new_units;
-
 	}
 	// reducing position
 	else
@@ -134,6 +139,7 @@ Position::adjust(
 	}
 	// adjust position units
 	this->_units += order_units;
+	parent_adjust(order_units, fill_price);
 
 	//if strategy does not have a trade, create one
 	auto strategy_index = order->get_strategy_index();
@@ -198,6 +204,32 @@ Position::adjust(
 
 
 //============================================================================
+void Position::parent_adjust(double units, double price) noexcept
+{
+	if (parent_position.has_value())
+	{
+		auto parent = parent_position.value();
+		auto existing_units = parent->_units;
+		auto existing_price = parent->_avg_price;
+		auto new_units = existing_units + units;
+		parent->_avg_price = (
+			(abs(existing_units) * existing_price) +
+			(abs(units) * price)
+			);
+		parent->_avg_price /= new_units;
+		parent->_units += units;
+		parent->_nlv = parent->_units * price;
+		parent->_unrealized_pnl = parent->_units * (price - parent->_avg_price);
+		if (units * existing_units < 0)
+		{
+			parent->_realized_pnl += (abs(units) * (price - parent->_avg_price));
+		}
+		parent->parent_adjust(units, price);
+	}
+}
+
+
+//============================================================================
 void
 Position::close(
 	Order const* order
@@ -229,8 +261,17 @@ void Position::evaluate(bool on_close, bool is_reprice) noexcept
 
 	for(auto&[strategy_index, trade] : _trades)
 	{
+		double trade_nlv = trade->get_nlv();
 		trade->evaluate(_last_price, on_close, is_reprice);
 		_nlv += trade->_nlv;
+
+		// propgate nlv adjustment to parent positions
+		auto parent = parent_position;
+		while (parent)
+		{
+			parent_position.value()->_nlv += (trade->_nlv - trade_nlv);
+			parent = parent_position.value()->parent_position;
+		}
 	}
 }
 

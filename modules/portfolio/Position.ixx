@@ -23,7 +23,7 @@ export class Position
     friend class Portfolio;
 private:
 	static std::atomic<size_t> _position_counter;
-
+    std::optional<Position*> parent_position;
 	Asset const& _asset;
     double _units;
     double _avg_price;
@@ -53,6 +53,8 @@ private:
         Order* order,
         std::vector<Trade*>& trade_history
     ) noexcept;
+    void parent_adjust(double units, double price) noexcept;
+    void set_parent_position(Position* parent_position) noexcept { this->parent_position = parent_position;}
     void adjust(Trade* trade) noexcept;
     void close(Order const* order) noexcept;
 
@@ -67,11 +69,13 @@ private:
 public:
     Position(
         Strategy* strategy,
-        Order const* order
+        Order const* order,
+        std::optional<Position*> parent_position = std::nullopt
     ) noexcept;
     Position(
         Strategy* strategy,
-        Trade* trade
+        Trade* trade,
+        std::optional<Position*> parent_position = std::nullopt
     ) noexcept;
 
     Position(Position const&) = delete;
@@ -80,6 +84,7 @@ public:
     AGIS_API [[nodiscard]] double get_unrealized_pnl() const noexcept { return this->_unrealized_pnl; }
     AGIS_API [[nodiscard]] double get_avg_price() const { return this->_avg_price; }
     AGIS_API [[nodiscard]] double get_nlv() const { return this->_nlv; }
+    AGIS_API [[nodiscard]] size_t get_asset_index() const { return this->_asset_index; }
     AGIS_API [[nodiscard]] double get_unrealized_pl() const { return this->_unrealized_pnl; }
     AGIS_API [[nodiscard]] double get_realized_pl() const { return this->_realized_pnl; }
     AGIS_API [[nodiscard]] double get_units() const { return this->_units; }

@@ -273,12 +273,9 @@ Portfolio::process_filled_order(Order* order)
 		}
 		else this->close_position(order, position);
 
-		lock.unlock();
-		if (_parent_portfolio)
-		{
-			process_filled_order(order);
-		}
 	}
+	lock.unlock();
+
 	// adjust cash levels required by the order. Intial call on the base portfolio will adjust
 	// cash levels all the way up the portfolio tree
 	auto cash_adjustment = order->get_units() * order->get_fill_price();
@@ -314,8 +311,14 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 	auto& trades = position->get_trades();
 	for (auto& [strategy_index, trade] : trades)
 	{
-		if(trade->get_portfolio_index() == _portfolio_index)
 		_trade_history.push_back(trade);
+		if (_parent_portfolio)
+		{
+			_parent_portfolio.value()->close_trade(
+				trade->get_asset_index(),
+				trade->get_strategy_index()
+			);
+		}
 	}
 	
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
@@ -385,9 +388,12 @@ Portfolio::adjust_position(Order* order, Position* position) noexcept
 void
 Portfolio::open_position(Order const* order) noexcept
 {
+	auto asset_index = order->get_asset_index();
+	auto position = std::make_unique<Position>(order->get_strategy_mut(), order);
+	this->set_child_portfolio_position_parents(position.get());
 	_positions.emplace(
-		order->get_asset_index(),
-		std::make_unique<Position>(order->get_strategy_mut(), order)
+		asset_index,
+		std::move(position)
 	);
 }
 
@@ -396,12 +402,38 @@ Portfolio::open_position(Order const* order) noexcept
 void
 Portfolio::open_position(Trade* trade) noexcept
 {
-	_positions.emplace(
-		trade->get_asset_index(),
-		std::make_unique<Position>(trade->get_strategy_mut(), trade)
-	);
-	while (_parent_portfolio) {
+	auto asset_index = trade->get_asset_index();
+	auto it = _positions.find(asset_index);
+	if (it != _positions.end())
+	{
+		this->insert_trade(trade);
+	}
+	else
+	{
+		auto position = std::make_unique<Position>(trade->get_strategy_mut(), trade);
+		this->set_child_portfolio_position_parents(position.get());
+		_positions.emplace(
+			asset_index,
+			std::move(position)
+		);
+	}
+	while (_parent_portfolio) 
+	{
 		_parent_portfolio.value()->open_position(trade);
+	}
+}
+
+
+//============================================================================
+void Portfolio::set_child_portfolio_position_parents(Position* p) noexcept
+{
+	for (auto& [index, portfolio] : _child_portfolios)
+	{
+		auto position = portfolio->get_position_mut(p->get_asset_index());
+		if (position)
+		{
+			position.value()->set_parent_position(p);
+		}
 	}
 }
 
@@ -416,6 +448,18 @@ Portfolio::get_exchange() const noexcept
 	}
 	return _exchange;
 }
+
+
+
+
+//============================================================================
+std::optional<Position*>
+Portfolio::get_parent_position(size_t asset_index) const noexcept
+{
+	if (!_parent_portfolio) return std::nullopt;
+	return _parent_portfolio.value()->get_position_mut(asset_index);
+}
+
 
 //============================================================================
 std::optional<Position*>
