@@ -8,6 +8,7 @@ module;
 module HydraModule;
 
 import PortfolioModule;
+import StrategyModule;
 import ExchangeMapModule;
 
 namespace Agis
@@ -18,6 +19,7 @@ struct HydraPrivate
 {
 	ExchangeMap exchanges;
 	ankerl::unordered_dense::map<std::string, Portfolio*> portfolios;
+	ankerl::unordered_dense::map<std::string, Strategy*> strategies;
 	Portfolio master_portfolio;
 	tbb::task_group pool;
 	bool built = false;
@@ -108,6 +110,16 @@ Hydra::reset() noexcept
 
 
 //============================================================================
+std::optional<Strategy*>
+Hydra::get_strategy_mut(std::string const& strategy_id) const noexcept
+{
+	auto it = _p->strategies.find(strategy_id);
+	if (it == _p->strategies.end()) return std::nullopt;
+	return it->second;
+}
+
+
+//============================================================================
 std::optional<Portfolio const*>
 Hydra::get_portfolio(std::string const& portfolio_id) const noexcept
 {
@@ -121,6 +133,16 @@ ExchangeMap const&
 Hydra::get_exchanges() const noexcept
 {
 	return _p->exchanges;
+}
+
+
+//============================================================================
+std::optional<Exchange const*>
+Hydra::get_exchange(std::string const& exchange_id) const noexcept
+{
+	auto res = _p->exchanges.get_exchange(exchange_id);
+	if(res) return res.value();
+	return std::nullopt;
 }
 
 
@@ -141,7 +163,16 @@ Hydra::asset_exists(std::string const& asset_id) const noexcept
 
 
 //============================================================================
-std::expected<Portfolio const*, AgisException>
+std::expected<bool, AgisException>
+Hydra::register_strategy(std::unique_ptr<Strategy> strategy)
+{
+	_p->strategies[strategy->get_strategy_id()] = strategy.get();
+	auto portfolio = strategy->get_portfolio();
+	return portfolio->add_strategy(std::move(strategy));
+}
+
+//============================================================================
+std::expected<Portfolio*, AgisException>
 Hydra::create_portfolio(
 	std::string portfolio_id,
 	std::optional<std::string> exchange_id,

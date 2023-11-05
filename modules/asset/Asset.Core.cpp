@@ -101,13 +101,6 @@ Asset::~Asset()
 
 
 //============================================================================
-size_t Asset::get_index() const noexcept
-{
-	return size_t();
-}
-
-
-//============================================================================
 size_t Asset::rows() const noexcept
 {
 	return _p->_rows;

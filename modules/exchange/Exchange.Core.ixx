@@ -61,7 +61,7 @@ private:
 	void register_portfolio(Portfolio* p) noexcept;
 	void reset() noexcept;
 	void build() noexcept;
-	std::optional<std::unique_ptr<Order>> place_order(std::unique_ptr<Order> order) noexcept;
+	[[nodiscard]] std::optional<std::unique_ptr<Order>> place_order(std::unique_ptr<Order> order) noexcept;
 	
 	void process_market_order(Order* order) noexcept;
 	void process_order(Order* order) noexcept;
@@ -79,6 +79,7 @@ public:
 	Exchange& operator=(Exchange const&) = delete;
 	size_t get_exchange_index() const noexcept;
 	long long get_dt() const noexcept;
+	std::optional<size_t> get_asset_index(std::string const& asset_id) const noexcept;
 	std::vector<long long> const& get_dt_index() const noexcept;
 	std::vector<Asset*> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;

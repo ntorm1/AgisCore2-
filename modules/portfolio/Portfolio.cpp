@@ -193,13 +193,12 @@ Portfolio::add_strategy(std::unique_ptr<Strategy> strategy)
 void
 Portfolio::place_order(std::unique_ptr<Order> order) noexcept
 {
-	auto o = order.get();
 	if (!_exchange) return;
 	auto res = _exchange->place_order(std::move(order));
 	if(res)
 	{
-		auto order_state = order->get_order_state();
-		this->process_order(std::move(order));
+		auto o = std::move(res.value());
+		this->process_order(std::move(o));
 	}
 }
 
@@ -208,7 +207,7 @@ Portfolio::place_order(std::unique_ptr<Order> order) noexcept
 void
 Portfolio::process_filled_order(Order* order)
 {
-	auto lock = std::lock_guard(_mutex);
+	std::unique_lock<std::shared_mutex> lock(_mutex);
 
 	auto position_opt = get_position(order->get_asset_index());
 	if (!position_opt)
@@ -250,9 +249,10 @@ Portfolio::process_filled_order(Order* order)
 	if (order->get_portfolio_index() == _portfolio_index)
 	{
 		_tracers.cash_add_assign(-cash_adjustment);
+		order->get_strategy_mut()->_tracers.cash_add_assign(-cash_adjustment);
 	}
 	// propogate the order up the portfolio tree and drop the lock on this portfolio
-	lock.~lock_guard();
+	lock.unlock();
 	if (_parent_portfolio)
 	{
 		_parent_portfolio.value()->process_filled_order(order);
@@ -297,8 +297,7 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 void
 Portfolio::adjust_position(Order* order, Position* position) noexcept
 {
-	auto strategy = _strategies.at(order->get_strategy_index()).get();
-	position->adjust(strategy, order, _trade_history);
+	position->adjust(order->get_strategy_mut(), order, _trade_history);
 }
 
 
@@ -306,8 +305,10 @@ Portfolio::adjust_position(Order* order, Position* position) noexcept
 void
 Portfolio::open_position(Order const* order) noexcept
 {
-	auto& strategy = _strategies.at(order->get_strategy_index());
-	_positions.emplace(order->get_asset_index(), std::make_unique<Position>(strategy.get(), order));
+	_positions.emplace(
+		order->get_asset_index(),
+		std::make_unique<Position>(order->get_strategy_mut(), order)
+	);
 }
 
 

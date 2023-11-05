@@ -44,6 +44,7 @@ export class Order
 private:
 	static std::atomic<size_t> order_counter;
 	Asset const* _asset = nullptr;
+	Strategy*	_strategy = nullptr;
 	OrderType	_type;
 	OrderState	_state = OrderState::PENDING;
 	bool		_force_close = false;
@@ -68,12 +69,14 @@ private:
 	void set_order_state(OrderState state) noexcept { this->_state = state; }
 	void set_units(double units) noexcept { this->_units = units; }
 	void set_force_close(bool force_close) noexcept { this->_force_close = force_close; }
+	[[nodiscard]] inline Strategy* get_strategy_mut() const noexcept { return this->_strategy; }
 
 public:
 
 	Order(OrderType order_type,
 		size_t asset_index,
 		double units,
+		Strategy* strategy,
 		size_t strategy_index,
 		size_t exchange_index,
 		size_t portfolio_index

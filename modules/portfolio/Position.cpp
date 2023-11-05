@@ -46,8 +46,9 @@ Position::Position(Strategy* strategy, Order const* order) noexcept
 		strategy,
 		order
 	);
+	auto t = trade.get();
 	_trades.insert({ _strategy_index,std::move(trade) });
-	strategy->add_trade(trade.get());
+	strategy->add_trade(t);
 }
 
 
@@ -188,6 +189,7 @@ Position::generate_position_inverse_order() const noexcept
 		OrderType::MARKET_ORDER,
 		_asset_index,
 		-1 * _units,
+		nullptr,
 		0,
 		0,
 		0

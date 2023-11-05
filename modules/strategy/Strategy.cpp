@@ -18,18 +18,20 @@ import StrategyTracerModule;
 namespace Agis
 {
 
+std::atomic<size_t> Strategy::_strategy_counter(0);
+
+
 class StrategyPrivate
 {
 public:
 	Portfolio& portfolio;
-	std::string strategy_id;
 	size_t strategy_index;
 	size_t portfolio_index;
 	size_t exchange_index;
 	ankerl::unordered_dense::map<size_t, Trade const*> trades;
 
-	StrategyPrivate(Portfolio& p, std::string id , size_t index)
-		: strategy_id(id), strategy_index(index), portfolio(p)
+	StrategyPrivate(Portfolio& p, size_t index)
+		:  strategy_index(index), portfolio(p)
 	{}
 
 	void place_order(std::unique_ptr<Order> order)
@@ -41,16 +43,16 @@ public:
 //============================================================================
 Strategy::Strategy(
 	std::string id,
-	size_t index,
 	double cash,
 	Exchange const& exchange,
 	Portfolio& portfolio
 	): 
 	_exchange(exchange), _tracers(this, cash)
 {
-	_p = new StrategyPrivate(portfolio, id, index);
+	_p = new StrategyPrivate(portfolio, _strategy_counter++);
 	_p->portfolio_index = portfolio.get_portfolio_index();
 	_p->exchange_index = exchange.get_exchange_index();
+	_strategy_id = id;
 }
 
 
@@ -70,6 +72,7 @@ Strategy::place_market_order(size_t asset_index, double units)
 		OrderType::MARKET_ORDER,
 		asset_index,
 		units,
+		this,
 		_p->strategy_index,
 		_p->exchange_index,
 		_p->portfolio_index
@@ -82,6 +85,14 @@ Strategy::place_market_order(size_t asset_index, double units)
 size_t Strategy::get_strategy_index() const noexcept
 {
 	return _p->strategy_index;
+}
+
+
+//============================================================================
+std::optional<size_t>
+Strategy::get_asset_index(std::string const& asset_id)
+{
+	return _exchange.get_asset_index(asset_id);
 }
 
 //============================================================================

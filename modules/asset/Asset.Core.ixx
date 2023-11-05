@@ -43,7 +43,7 @@ export class Asset
 public:
 	~Asset();
 
-	size_t get_index() const noexcept;
+	size_t get_index() const noexcept { return _asset_index;}
 	size_t rows() const noexcept;
 	size_t columns() const noexcept;
 	AssetState get_state() const noexcept { return _state;}

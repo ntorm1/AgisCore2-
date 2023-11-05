@@ -17,6 +17,7 @@ std::atomic<size_t> Order::order_counter(0);
 Order::Order(OrderType order_type,
 	size_t asset_index,
 	double units,
+	Strategy* strategy,
 	size_t strategy_index,
 	size_t exchange_index,
 	size_t portfolio_index
@@ -26,6 +27,7 @@ Order::Order(OrderType order_type,
 	_type = order_type;
 	_asset_index = asset_index;
 	_units = units;
+	_strategy = strategy;
 	_strategy_index = strategy_index;
 	_portfolio_index = portfolio_index;
 	_exchange_index = exchange_index;

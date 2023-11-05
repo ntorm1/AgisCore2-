@@ -6,6 +6,7 @@ module;
 module ExchangeModule;
 
 import <filesystem>;
+import <unordered_map>;
 
 import PortfolioModule;
 import AssetModule;
@@ -26,7 +27,7 @@ struct ExchangePrivate
 
 	AssetFactory* asset_factory;
 	std::vector<Asset*> assets;
-
+	std::unordered_map<std::string, size_t> asset_index_map;
 	std::vector<std::unique_ptr<Order>> orders;
 
 	std::vector<long long> dt_index;
@@ -45,13 +46,13 @@ struct ExchangePrivate
 
 //============================================================================
 ExchangePrivate::ExchangePrivate(
-	std::string exchange_id,
-	size_t exchange_index,
-	std::string dt_format)
+	std::string _exchange_id,
+	size_t _exchange_index,
+	std::string _dt_format)
 {
-	exchange_id = exchange_id;
-	exchange_index = exchange_index;
-	dt_format = dt_format;
+	exchange_id = _exchange_id;
+	exchange_index = _exchange_index;
+	dt_format = _dt_format;
 	asset_factory = new AssetFactory(dt_format, exchange_id);
 }
 
@@ -115,6 +116,11 @@ std::expected<bool, AgisException> Exchange::load_assets() noexcept
 	else
 	{
 		return std::unexpected(AgisException("Source path is not a directory"));
+	}
+
+	for (auto& asset : _p->assets)
+	{
+		_p->asset_index_map.emplace(asset->get_id(), asset->get_index());
 	}
 
 	this->build();
@@ -202,6 +208,19 @@ Exchange::get_exchange_index() const noexcept
 long long Exchange::get_dt() const noexcept
 {
 	return _p->current_dt;
+}
+
+
+//============================================================================
+std::optional<size_t>
+Exchange::get_asset_index(std::string const& asset_id) const noexcept
+{
+	auto it = _p->asset_index_map.find(asset_id);
+	if (it == _p->asset_index_map.end())
+	{
+		return std::nullopt;
+	}
+	return it->second;
 }
 
 //============================================================================
