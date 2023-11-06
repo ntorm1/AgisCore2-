@@ -68,7 +68,6 @@ void Trade::reduce(Order const* filled_order)
 	auto units_ = filled_order->get_units();
 	auto adjustment = -1 * (units_ * (filled_order->get_fill_price() - _avg_price));
 	_realized_pnl += adjustment;
-	_realized_pnl -= adjustment;
 	_units += units_;
 }
 
@@ -77,8 +76,8 @@ void Trade::reduce(Order const* filled_order)
 void Trade::adjust(Order const* filled_order)
 {
 	// extract order information
-	auto units_ = filled_order->get_units();
-	if (units_ * _units > 0) 
+	auto order_units = filled_order->get_units();
+	if (order_units * _units > 0)
 	{
 		this->increase(filled_order);
 	}

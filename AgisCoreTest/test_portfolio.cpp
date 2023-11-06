@@ -229,5 +229,58 @@ TEST_F(PortfolioTest, OrderIncrease) {
 	EXPECT_DOUBLE_EQ(position1->get_nlv(), master_nlv);
 	EXPECT_DOUBLE_EQ(position1->get_units(), units1 + units2);
 	EXPECT_DOUBLE_EQ(position1->get_unrealized_pnl(), unrealized_pnl);
+
+	double nlv = cash1 + cash2 + unrealized_pnl;
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), nlv);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), nlv - cash2);
+	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), cash2);
+}
+
+TEST_F(PortfolioTest, OrderDecrease) {
+	hydra->build();
+	hydra->step();
+	double units1 = 1.0f;
+	double units2 = -.50f;
+	double market_price = 101.5;
+	double next_price = 99.0f;
+	strategy1->place_market_order(asset_id_2, units1);
+
+	hydra->step();
+	strategy1->place_market_order(asset_id_2, units2);
+	auto master_cash = cash1 + cash2 + .5 * (99.0 - 101.5) - .5 * 101.5;
+	EXPECT_DOUBLE_EQ(master_portfolio->get_cash(), master_cash);
+	EXPECT_DOUBLE_EQ(portfolio1->get_cash(), master_cash - cash2);
+
+	auto master_position = master_portfolio->get_position(asset_id_2).value();
+	auto position1 = portfolio1->get_position(asset_id_2).value();
+	double master_nlv = (units1 + units2) * next_price;
+	auto unrealized_pnl = (next_price - market_price) * (units1);
+	EXPECT_DOUBLE_EQ(master_position->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(master_position->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(master_position->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(position1->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(position1->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(position1->get_unrealized_pnl(), unrealized_pnl);
+
+	auto position2 = portfolio2->get_position(asset_id_2);
+	EXPECT_FALSE(position2.has_value());
+
+	hydra->step();
+	EXPECT_DOUBLE_EQ(master_portfolio->get_cash(), master_cash);
+	EXPECT_DOUBLE_EQ(portfolio1->get_cash(), master_cash - cash2);
+	double current_price = 97.0f;
+	master_nlv = (units1 + units2) * current_price;
+	unrealized_pnl = (current_price - market_price) * (units1 + units2);
+	EXPECT_DOUBLE_EQ(master_position->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(master_position->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(master_position->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(position1->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(position1->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(position1->get_unrealized_pnl(), unrealized_pnl);
+
+	double nlv = master_cash + position1->get_nlv();
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), nlv);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), nlv - cash2);
+	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), cash2);
 }
 

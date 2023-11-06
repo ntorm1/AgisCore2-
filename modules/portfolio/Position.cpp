@@ -213,16 +213,21 @@ void Position::parent_adjust(double units, double price) noexcept
 		auto existing_units = parent->_units;
 		auto existing_price = parent->_avg_price;
 		auto new_units = existing_units + units;
-		parent->_avg_price = (
-			(abs(existing_units) * existing_price) +
-			(abs(units) * price)
-			);
-		parent->_avg_price /= new_units;
 		parent->_units += units;
 		parent->_nlv = parent->_units * price;
+		// if decreasing position size adjust realized pnl
 		if (units * existing_units < 0)
 		{
 			parent->_realized_pnl += (abs(units) * (price - parent->_avg_price));
+		}
+		// otherwise increase position size, adjust avg price
+		else
+		{
+			parent->_avg_price = (
+				(abs(existing_units) * existing_price) +
+				(abs(units) * price)
+				);
+			parent->_avg_price /= new_units;
 		}
 		parent->parent_adjust(units, price);
 	}
@@ -269,7 +274,7 @@ void Position::evaluate(bool on_close, bool is_reprice) noexcept
 		auto parent = parent_position;
 		while (parent)
 		{
-			parent_position.value()->_nlv += (trade->_nlv - trade_nlv);
+			parent.value()->_nlv += (trade->_nlv - trade_nlv);
 			parent = parent_position.value()->parent_position;
 		}
 	}
