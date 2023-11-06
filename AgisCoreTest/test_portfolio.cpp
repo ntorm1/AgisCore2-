@@ -284,3 +284,30 @@ TEST_F(PortfolioTest, OrderDecrease) {
 	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), cash2);
 }
 
+
+TEST_F(PortfolioTest, OrderClose) {
+	hydra->build();
+	hydra->step();
+	double units1 = 1.0f;
+	double units2 = -1.0f;
+	double market_price = 101.5;
+	double next_price = 99.0f;
+	strategy1->place_market_order(asset_id_2, units1);
+
+	hydra->step();
+	strategy1->place_market_order(asset_id_2, units2);
+	auto master_cash = cash1 + cash2 + 1 * (99.0 - 101.5);
+	EXPECT_DOUBLE_EQ(master_portfolio->get_cash(), master_cash);
+	EXPECT_DOUBLE_EQ(portfolio1->get_cash(), master_cash - cash2);
+
+	auto master_position = master_portfolio->get_position(asset_id_2);
+	auto position1 = portfolio1->get_position(asset_id_2);
+	auto position2 = portfolio2->get_position(asset_id_2);
+	EXPECT_FALSE(master_position.has_value());
+	EXPECT_FALSE(position1.has_value());
+	EXPECT_FALSE(position2.has_value());
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), master_cash);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), master_cash - cash2);	
+	hydra->step();
+}
+

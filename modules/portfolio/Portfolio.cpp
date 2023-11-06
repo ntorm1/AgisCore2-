@@ -251,7 +251,7 @@ Portfolio::process_filled_order(Order* order)
 		auto position_units = position->get_units();
 		// if the new order units plut existing position units is not zero then the order
 		// is an adjustment of the current position
-		if (abs(order_units + order_units) > UNIT_EPSILON)
+		if (abs(order_units + position_units) > UNIT_EPSILON)
 		{
 			this->adjust_position(order, position);
 		}
@@ -323,8 +323,9 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 	
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
 	auto it = _positions.find(order->get_asset_index());
+	auto extracted_position = std::move(it->second);
 	_positions.erase(order->get_asset_index());
-	_position_history.push_back(std::move(it->second));
+	_position_history.push_back(std::move(extracted_position));
 }
 
 
@@ -333,6 +334,13 @@ void Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 {
 	auto position = get_position_mut(asset_index).value();
 	position->close_trade(strategy_index);
+	if (position->get_trades().size() == 0)
+	{
+		auto it = _positions.find(asset_index);
+		auto extracted_position = std::move(it->second);
+		_positions.erase(asset_index);
+		_position_history.push_back(std::move(extracted_position));
+	}
 	while (_parent_portfolio) {
 		_parent_portfolio.value()->close_trade(asset_index, strategy_index);
 	}
