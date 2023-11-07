@@ -148,7 +148,7 @@ Hydra::get_portfolio(std::string const& portfolio_id) const noexcept
 }
 
 //============================================================================
-ExchangeMap &
+ExchangeMap const&
 Hydra::get_exchanges() const noexcept
 {
 	auto lock = std::shared_lock(_mutex);

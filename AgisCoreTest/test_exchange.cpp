@@ -1,7 +1,11 @@
 #include "pch.h"
 
+#include <rapidjson/allocators.h>
+#include <rapidjson/document.h>
+
 import HydraModule;
 import ExchangeMapModule;
+import SerializeModule;
 
 using namespace Agis;
 
@@ -112,4 +116,24 @@ TEST_F(SimpleExchangeTests, TestRunTo) {
 	EXPECT_EQ(exchanges.get_market_price(asset_id_2, false).value(), 101.0f);
 	EXPECT_EQ(exchanges.get_market_price(asset_id_2, true).value(), 101.5);
 
+}
+
+TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {
+	// create rapid json doc and get the allocator
+	rapidjson::Document doc;
+	auto& allocator = doc.GetAllocator();
+	auto res = serialize_hydra(allocator, *hydra);
+	EXPECT_TRUE(res.has_value());
+	auto& json = res.value();
+	EXPECT_TRUE(json.HasMember("exchanges"));
+
+	// get the exchanges json
+	auto& exchanges_json = json["exchanges"];
+	EXPECT_TRUE(exchanges_json.IsObject());
+	// print out all keys in the rapidjson object
+	for (auto& key : exchanges_json.GetObject()) {
+		auto s = key.name.GetString();
+		int i = 1;
+	}
+	EXPECT_TRUE(exchanges_json.HasMember(exchange_id_1.c_str()));
 }

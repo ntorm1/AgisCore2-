@@ -25,6 +25,30 @@ namespace Agis
 
 typedef std::expected<rapidjson::Value, AgisException> SerializeResult;
 
-rapidjson::Document serialize_exchange(Exchange const& exchange);
+
+//============================================================================
+export AGIS_API SerializeResult serialize_hydra(
+	rapidjson::Document::AllocatorType& allocator,
+	Hydra const& hydra
+);
+
+}
+
+module:private;
+
+namespace Agis
+{
+
+//============================================================================
+rapidjson::Document serialize_exchange_map(
+	rapidjson::Document::AllocatorType& allocator,
+	ExchangeMap const& exchange_map
+);
+
+//============================================================================
+rapidjson::Document serialize_exchange(
+	rapidjson::Document::AllocatorType& allocator,
+	Exchange const& exchange
+);
 
 }
