@@ -100,3 +100,16 @@ TEST_F(SimpleExchangeTests, TestGetMarketPrice) {
 	EXPECT_EQ(exchanges.get_market_price(asset_id_2, false).value(), 100);
 	EXPECT_EQ(exchanges.get_market_price(asset_id_2, true).value(), 99);
 }
+
+TEST_F(SimpleExchangeTests, TestRunTo) {
+	hydra->build();
+	auto& exchanges = hydra->get_exchanges();
+
+	hydra->run_to(t4);
+	EXPECT_EQ(exchanges.get_global_time(), t4);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_1, false).value(), 105.0f);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_1, true).value(), 106.0f);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, false).value(), 101.0f);
+	EXPECT_EQ(exchanges.get_market_price(asset_id_2, true).value(), 101.5);
+
+}

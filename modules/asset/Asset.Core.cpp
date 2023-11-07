@@ -118,7 +118,7 @@ size_t Asset::columns() const noexcept
 std::optional<double>
 Asset::get_market_price(bool is_close) const noexcept
 {
-	if (_state != AssetState::STREAMING)
+	if (_state != AssetState::STREAMING && _state != AssetState::LAST)
 	{
 		return std::nullopt;
 	}

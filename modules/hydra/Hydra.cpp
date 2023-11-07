@@ -51,7 +51,7 @@ Hydra::~Hydra()
 
 //============================================================================
 std::expected<bool, AgisException> 
-Hydra::run(std::string const& path) noexcept
+Hydra::run() noexcept
 {
 	auto lock = std::unique_lock(_mutex);
 	if(!_p->built)
@@ -63,6 +63,21 @@ Hydra::run(std::string const& path) noexcept
 	for (size_t i = 0; i < index.size(); ++i)
 	{
 		AGIS_ASSIGN_OR_RETURN(res, step());
+	}
+	return true;
+}
+
+
+//============================================================================
+std::expected<bool, AgisException>
+Hydra::run_to(long long dt) noexcept
+{
+	auto global_time = _p->exchanges.get_global_time();
+	while (global_time < dt)
+	{
+		AGIS_ASSIGN_OR_RETURN(res, step());
+		global_time = _p->exchanges.get_global_time();
+
 	}
 	return true;
 }
