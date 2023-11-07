@@ -81,6 +81,7 @@ public:
     Position(Position const&) = delete;
     Position& operator=(Position const&) = delete;
 
+    AGIS_API [[nodiscard]] double get_realized_pnl() const noexcept { return this->_realized_pnl; }
     AGIS_API [[nodiscard]] double get_unrealized_pnl() const noexcept { return this->_unrealized_pnl; }
     AGIS_API [[nodiscard]] double get_avg_price() const { return this->_avg_price; }
     AGIS_API [[nodiscard]] double get_nlv() const { return this->_nlv; }

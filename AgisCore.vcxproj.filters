@@ -116,5 +116,11 @@
     <ClCompile Include="modules\strategy\StrategyTracer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="modules\io\Serialize.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\io\Serialize.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -254,13 +254,16 @@ TEST_F(PortfolioTest, OrderDecrease) {
 	auto master_position = master_portfolio->get_position(asset_id_2).value();
 	auto position1 = portfolio1->get_position(asset_id_2).value();
 	double master_nlv = (units1 + units2) * next_price;
+	double realized_pnl = (units2 + units1) * (next_price - market_price);
 	auto unrealized_pnl = (next_price - market_price) * (units1);
 	EXPECT_DOUBLE_EQ(master_position->get_nlv(), master_nlv);
 	EXPECT_DOUBLE_EQ(master_position->get_units(), units1 + units2);
 	EXPECT_DOUBLE_EQ(master_position->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(master_position->get_realized_pnl(), realized_pnl);
 	EXPECT_DOUBLE_EQ(position1->get_nlv(), master_nlv);
 	EXPECT_DOUBLE_EQ(position1->get_units(), units1 + units2);
 	EXPECT_DOUBLE_EQ(position1->get_unrealized_pnl(), unrealized_pnl);
+	EXPECT_DOUBLE_EQ(position1->get_realized_pnl(), realized_pnl);
 
 	auto position2 = portfolio2->get_position(asset_id_2);
 	EXPECT_FALSE(position2.has_value());

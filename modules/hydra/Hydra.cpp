@@ -53,6 +53,7 @@ Hydra::~Hydra()
 std::expected<bool, AgisException> 
 Hydra::run(std::string const& path) noexcept
 {
+	auto lock = std::unique_lock(_mutex);
 	if(!_p->built)
 	{
 		AGIS_ASSIGN_OR_RETURN(res, build());
@@ -113,6 +114,7 @@ Hydra::reset() noexcept
 std::optional<Strategy*>
 Hydra::get_strategy_mut(std::string const& strategy_id) const noexcept
 {
+	auto lock = std::shared_lock(_mutex);
 	auto it = _p->strategies.find(strategy_id);
 	if (it == _p->strategies.end()) return std::nullopt;
 	return it->second;
@@ -123,6 +125,7 @@ Hydra::get_strategy_mut(std::string const& strategy_id) const noexcept
 std::optional<Portfolio const*>
 Hydra::get_portfolio(std::string const& portfolio_id) const noexcept
 {
+	auto lock = std::shared_lock(_mutex);
 	if(portfolio_id == "master") return &_p->master_portfolio;
 	auto it = _p->portfolios.find(portfolio_id);
 	if (it == _p->portfolios.end()) return std::nullopt;
@@ -130,9 +133,10 @@ Hydra::get_portfolio(std::string const& portfolio_id) const noexcept
 }
 
 //============================================================================
-ExchangeMap const&
+ExchangeMap &
 Hydra::get_exchanges() const noexcept
 {
+	auto lock = std::shared_lock(_mutex);
 	return _p->exchanges;
 }
 
@@ -141,6 +145,7 @@ Hydra::get_exchanges() const noexcept
 std::optional<Exchange const*>
 Hydra::get_exchange(std::string const& exchange_id) const noexcept
 {
+	auto lock = std::shared_lock(_mutex);
 	auto res = _p->exchanges.get_exchange(exchange_id);
 	if(res) return res.value();
 	return std::nullopt;
@@ -151,6 +156,7 @@ Hydra::get_exchange(std::string const& exchange_id) const noexcept
 std::vector<long long>
 const& Hydra::get_dt_index() const noexcept
 {
+	auto lock = std::shared_lock(_mutex);
 	return _p->exchanges.get_dt_index();
 }
 
@@ -159,6 +165,7 @@ const& Hydra::get_dt_index() const noexcept
 bool
 Hydra::asset_exists(std::string const& asset_id) const noexcept
 {
+	auto lock = std::shared_lock(_mutex);
 	return _p->exchanges.asset_exists(asset_id);
 }
 
@@ -167,6 +174,7 @@ Hydra::asset_exists(std::string const& asset_id) const noexcept
 std::expected<bool, AgisException>
 Hydra::register_strategy(std::unique_ptr<Strategy> strategy)
 {
+	auto lock = std::unique_lock(_mutex);
 	_p->strategies[strategy->get_strategy_id()] = strategy.get();
 	auto portfolio = strategy->get_portfolio();
 	return portfolio->add_strategy(std::move(strategy));
@@ -180,6 +188,7 @@ Hydra::create_portfolio(
 	std::optional<Portfolio*> parent,
 	double cash)
 {
+	auto lock = std::unique_lock(_mutex);
 	if (_p->portfolios.count(portfolio_id))
 	{
 		return std::unexpected<AgisException>(AgisException("Portfolio already exists"));
@@ -214,6 +223,7 @@ Hydra::create_portfolio(
 std::expected<Exchange const*, AgisException>
 Hydra::create_exchange(std::string exchange_id, std::string dt_format, std::string source)
 {
+	auto lock = std::unique_lock(_mutex);
 	_p->built = false;
 	return _p->exchanges.create_exchange(exchange_id, dt_format, source);
 }

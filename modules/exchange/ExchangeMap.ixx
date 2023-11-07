@@ -66,7 +66,7 @@ public:
 	AGIS_API ~ExchangeMap();
 
 	AGIS_API bool asset_exists(std::string const& id) const noexcept;
-
+	AGIS_API std::unordered_map<std::string, size_t> const& get_exchange_indecies() const noexcept;
 	AGIS_API [[nodiscard]] std::optional<double> get_market_price(std::string const& asset_id, bool close) const noexcept;
 	AGIS_API [[nodiscard]] std::expected<Asset const*, AgisException> get_asset(std::string const& id) const noexcept;
 	AGIS_API [[nodiscard]] std::optional<size_t> get_asset_index(std::string const& id) const noexcept;

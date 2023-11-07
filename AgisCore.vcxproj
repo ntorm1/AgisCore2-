@@ -78,7 +78,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <AllProjectBMIsArePublic>true</AllProjectBMIsArePublic>
-    <IncludePath>$(SolutionDir)external\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)external\include;$(IncludePath);$(SolutionDir)include;</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -141,8 +141,9 @@
       <SDLCheck>false</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;AGISCORE_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -168,6 +169,8 @@
     <ClCompile Include="modules\exchange\ExchangeMap.ixx" />
     <ClCompile Include="modules\hydra\Hydra.cpp" />
     <ClCompile Include="modules\hydra\Hydra.ixx" />
+    <ClCompile Include="modules\io\Serialize.cpp" />
+    <ClCompile Include="modules\io\Serialize.ixx" />
     <ClCompile Include="modules\order\Order.cpp" />
     <ClCompile Include="modules\order\Order.ixx" />
     <ClCompile Include="modules\portfolio\Portfolio.cpp" />

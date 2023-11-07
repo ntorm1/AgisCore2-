@@ -161,6 +161,14 @@ ExchangeMap::asset_exists(std::string const& id) const noexcept
 
 
 //============================================================================
+std::unordered_map<std::string, size_t> const&
+ExchangeMap::get_exchange_indecies() const noexcept
+{
+	return _p->exchange_indecies;
+}
+
+
+//============================================================================
 std::expected<Asset const*, AgisException>
 ExchangeMap::get_asset(std::string const& id) const noexcept
 {

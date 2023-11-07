@@ -212,6 +212,22 @@ long long Exchange::get_dt() const noexcept
 
 
 //============================================================================
+std::string const&
+Exchange::get_exchange_id() const noexcept
+{
+	return _p->exchange_id;
+}
+
+
+//============================================================================
+std::string const&
+Exchange::get_dt_format() const noexcept
+{
+	return _p->dt_format;
+}
+
+
+//============================================================================
 std::optional<size_t>
 Exchange::get_asset_index(std::string const& asset_id) const noexcept
 {

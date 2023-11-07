@@ -79,9 +79,12 @@ public:
 	Exchange& operator=(Exchange const&) = delete;
 	size_t get_exchange_index() const noexcept;
 	long long get_dt() const noexcept;
+	std::string const& get_exchange_id() const noexcept;
+	std::string const& get_dt_format() const noexcept;
+	std::string const& get_source() const noexcept{ return _source; }
 	std::optional<size_t> get_asset_index(std::string const& asset_id) const noexcept;
 	std::vector<long long> const& get_dt_index() const noexcept;
-	std::vector<Asset*> const& get_assets() const noexcept;
+	AGIS_API std::vector<Asset*> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;
 
 
