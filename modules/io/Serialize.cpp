@@ -46,6 +46,33 @@ serialize_exchange(
 
 
 //============================================================================
+std::expected<bool, AgisException> deserialize_exchange_map(rapidjson::Document const& json, Hydra* hydra)
+{
+	if (!json.HasMember("exchanges"))
+	{
+		return std::unexpected(AgisException("Json file does not have exchanges"));
+	}
+	auto& exchanges = json["exchanges"];
+	if (!exchanges.IsObject())
+	{
+		return std::unexpected(AgisException("Json file does not have exchanges: "));
+	}
+	for (auto& exchange : exchanges.GetObject())
+	{
+		auto exchange_id = exchange.name.GetString();
+		auto source = exchange.value["source_dir"].GetString();
+		auto dt_format = exchange.value["dt_format"].GetString();
+		auto res = hydra->create_exchange(exchange_id, dt_format, source);
+		if (!res)
+		{
+			return std::unexpected(res.error());
+		}
+	}
+	return true;
+}
+
+
+//============================================================================
 rapidjson::Document
 serialize_exchange_map(
 	rapidjson::Document::AllocatorType& allocator,
@@ -92,6 +119,37 @@ SerializeResult serialize_hydra(
 	}
 
 	return j;
+}
+
+
+//============================================================================
+std::expected<std::unique_ptr<Hydra>, AgisException>
+deserialize_hydra(std::string const& path)
+{
+	// validate path exists
+	if (!std::filesystem::exists(path))
+	{
+		return std::unexpected(AgisException("File does not exist: " + path));
+	}
+	// validate it is json file
+	if (std::filesystem::path(path).extension() != ".json")
+	{
+		return std::unexpected(AgisException("File is not a json file: " + path));
+	}
+	// read it into rapidjson document
+	std::ifstream in(path);
+	std::string json_str((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+	rapidjson::Document doc;
+	doc.Parse(json_str.c_str());
+	if (doc.HasParseError())
+	{
+		return std::unexpected(AgisException("Failed to parse json file: " + path));
+	}
+
+	std::unique_ptr<Hydra> hydra = std::make_unique<Hydra>();
+	AGIS_ASSIGN_OR_RETURN(res, deserialize_exchange_map(doc, hydra.get()));
+
+	return std::move(hydra);
 }
 
 

@@ -130,10 +130,12 @@ TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {
 	// get the exchanges json
 	auto& exchanges_json = json["exchanges"];
 	EXPECT_TRUE(exchanges_json.IsObject());
-	// print out all keys in the rapidjson object
-	for (auto& key : exchanges_json.GetObject()) {
-		auto s = key.name.GetString();
-		int i = 1;
-	}
 	EXPECT_TRUE(exchanges_json.HasMember(exchange_id_1.c_str()));
+
+	auto new_hydra = deserialize_hydra("test.json");
+	EXPECT_TRUE(new_hydra.has_value());
+	auto& new_hydra_ref = new_hydra.value();
+	auto& new_exchanges = new_hydra_ref->get_exchanges();
+	EXPECT_TRUE(new_exchanges.asset_exists(asset_id_1));
+	EXPECT_TRUE(new_exchanges.asset_exists(asset_id_2));
 }

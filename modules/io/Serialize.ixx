@@ -35,12 +35,22 @@ export AGIS_API SerializeResult serialize_hydra(
 	std::optional<std::string> out_path = std::nullopt
 );
 
+export AGIS_API std::expected<std::unique_ptr<Hydra>, AgisException> deserialize_hydra(
+	std::string const& path
+);
+
 }
 
 module:private;
 
 namespace Agis
 {
+
+//============================================================================
+std::expected<bool, AgisException> deserialize_exchange_map(
+	rapidjson::Document const& json,
+	Hydra* hydra
+);
 
 //============================================================================
 rapidjson::Document serialize_exchange_map(
