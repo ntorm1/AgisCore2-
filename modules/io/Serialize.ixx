@@ -17,6 +17,8 @@ module;
 export module SerializeModule;
 
 import <expected>;
+import <optional>;
+import <string>;
 
 import AgisError;
 
@@ -29,7 +31,8 @@ typedef std::expected<rapidjson::Value, AgisException> SerializeResult;
 //============================================================================
 export AGIS_API SerializeResult serialize_hydra(
 	rapidjson::Document::AllocatorType& allocator,
-	Hydra const& hydra
+	Hydra const& hydra,
+	std::optional<std::string> out_path = std::nullopt
 );
 
 }

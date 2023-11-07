@@ -122,7 +122,7 @@ TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {
 	// create rapid json doc and get the allocator
 	rapidjson::Document doc;
 	auto& allocator = doc.GetAllocator();
-	auto res = serialize_hydra(allocator, *hydra);
+	auto res = serialize_hydra(allocator, *hydra, "test.json");
 	EXPECT_TRUE(res.has_value());
 	auto& json = res.value();
 	EXPECT_TRUE(json.HasMember("exchanges"));
