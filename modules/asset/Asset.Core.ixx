@@ -48,6 +48,7 @@ public:
 	size_t columns() const noexcept;
 	AssetState get_state() const noexcept { return _state;}
 	std::optional<double> get_market_price(bool is_close) const noexcept;
+	std::optional<double> get_asset_feature(size_t column, int index) const noexcept;
 	std::string const& get_id() const noexcept { return _asset_id;}
 	std::string const& get_dt_format() const noexcept { return _dt_format; }
 	std::vector<long long> const& get_dt_index() const noexcept;

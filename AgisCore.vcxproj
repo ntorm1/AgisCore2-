@@ -126,6 +126,7 @@
       <EnableModules>true</EnableModules>
       <BuildStlModules>true</BuildStlModules>
       <ExceptionHandling>Sync</ExceptionHandling>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -144,6 +145,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -163,6 +165,10 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="modules\asset\Asset.Private.cpp" />
+    <ClCompile Include="modules\ast\AssetNode.cpp" />
+    <ClCompile Include="modules\ast\AssetNode.ixx" />
+    <ClCompile Include="modules\ast\BaseNode.cpp" />
+    <ClCompile Include="modules\ast\BaseNode.ixx" />
     <ClCompile Include="modules\exchange\Exchange.Core.cpp" />
     <ClCompile Include="modules\exchange\Exchange.Core.ixx" />
     <ClCompile Include="modules\exchange\ExchangeMap.cpp" />
@@ -185,6 +191,7 @@
     <ClCompile Include="modules\asset\Asset.Private.ixx" />
     <ClCompile Include="modules\standard\AgisError.ixx" />
     <ClCompile Include="modules\standard\AgisFileUtils.ixx" />
+    <ClCompile Include="modules\standard\AgisPointer.ixx" />
     <ClCompile Include="modules\standard\AgisTimeUtils.ixx" />
     <ClCompile Include="modules\strategy\Strategy.cpp" />
     <ClCompile Include="modules\strategy\Strategy.ixx" />

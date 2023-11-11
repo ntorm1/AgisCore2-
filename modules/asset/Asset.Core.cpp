@@ -134,6 +134,25 @@ Asset::get_market_price(bool is_close) const noexcept
 
 
 //============================================================================
+std::optional<double> Asset::get_asset_feature(size_t column, int index) const noexcept
+{
+	if (abs(index) > static_cast<int>(_p->_current_index - 1) || index > 0)
+	{
+		return std::nullopt;
+	}
+	if (_state != AssetState::STREAMING && _state != AssetState::LAST)
+	{
+		return std::nullopt;
+	}
+	if (column >= _p->_cols)
+	{
+		return std::nullopt;
+	}
+	return *(_p->_data_ptr + _p->_open_index - _p->_cols);
+}
+
+
+//============================================================================
 std::vector<long long> const& Asset::get_dt_index() const noexcept
 {
 	return _p->_dt_index;
