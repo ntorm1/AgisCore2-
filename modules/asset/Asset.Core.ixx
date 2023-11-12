@@ -49,17 +49,19 @@ public:
 	AssetState get_state() const noexcept { return _state;}
 	std::optional<double> get_market_price(bool is_close) const noexcept;
 	std::optional<double> get_asset_feature(size_t column, int index) const noexcept;
-	std::string const& get_id() const noexcept { return _asset_id;}
 	std::string const& get_dt_format() const noexcept { return _dt_format; }
 	std::vector<long long> const& get_dt_index() const noexcept;
-	std::vector<double> const& get_data() const noexcept;
 	std::optional<std::vector<double>> get_column(std::string const& column_name) const noexcept;
-	std::vector<std::string> get_column_names() const noexcept;
 	size_t get_current_index() const noexcept;
 	inline bool is_streaming() const noexcept 
 	{
 		return _state == AssetState::STREAMING || _state == AssetState::LAST;
 	}
+
+	AGIS_API std::vector<std::string> get_column_names() const noexcept;
+	AGIS_API std::vector<double> const& get_data() const noexcept;
+	AGIS_API std::string const& get_id() const noexcept { return _asset_id; }
+
 
 	// delete copy constructor and assignment operator
 	Asset(const Asset& other) = delete;

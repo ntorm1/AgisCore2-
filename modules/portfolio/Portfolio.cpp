@@ -133,18 +133,23 @@ Portfolio::evaluate(bool on_close, bool is_reprice)
 		// force close any positions whos asset is no longer available
 		if (position->is_last_row())
 		{
-			auto order = position->generate_position_inverse_order();
-			order->set_order_state(OrderState::CHEAT);
-			order->set_force_close(true);
-			auto res = _exchange_map.value()->force_place_order(order.get(), on_close);
-			if(!res) return std::unexpected(res.error());
-			filled_orders.push_back(std::move(order));
+			auto& trades = position->get_trades();
+			for (auto& [strategy_index, trade] : trades)
+			{
+				auto order = trade->generate_trade_inverse();
+				order->set_order_state(OrderState::CHEAT);
+				order->set_force_close(true);
+				auto res = _exchange_map.value()->force_place_order(order.get(), on_close);
+				if (!res) return std::unexpected(res.error());
+				filled_orders.push_back(std::move(order));
+			}
 		}
 	}
 
 	for (auto& order : filled_orders)
 	{
-		this->process_order(std::move(order));
+		auto portfolio = *(order->get_parent_portfolio_mut());
+		portfolio->process_order(std::move(order));
 	}
 
 	if (is_reprice) return true;

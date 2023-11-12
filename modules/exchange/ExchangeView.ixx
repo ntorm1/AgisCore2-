@@ -24,6 +24,11 @@ export enum class ExchangeQueryType : uint8_t
 	NExtreme	/// return the N/2 smallest and largest
 };
 
+enum class ExchangeViewOpp
+{
+	UNIFORM,			/// applies 1/N weight to each pair
+};
+
 
 export struct Allocation
 {
@@ -45,6 +50,8 @@ public:
 
 	size_t size() const noexcept { return _view.size(); }
 	size_t allocation_count() const noexcept { return _allocation_count; }
+	std::vector<std::optional<Allocation>> const & get_view() const noexcept { return _view; }
+	void set_weights(ExchangeViewOpp opp) noexcept;
 	AGIS_API std::optional<double> get_allocation(size_t index) const noexcept;
 	AGIS_API std::optional<double> search_allocation(size_t asset_index) const noexcept;
 
@@ -52,6 +59,8 @@ public:
 	void set_allocation(size_t index, double value);
 
 private:
+
+	void uniform_weights();
 
 	void sort(size_t count, ExchangeQueryType type);
 	void set_allocation_count(size_t count) noexcept { _allocation_count = count; }

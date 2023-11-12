@@ -43,7 +43,7 @@ private:
 
 	bool has_exception() const noexcept { return _exception.has_value(); }
 	void set_exception(AgisException&& exception) noexcept { _exception = exception; }
-
+	Portfolio* get_portfolio_mut() const noexcept;
 
 protected:
 	AGIS_API Strategy(
@@ -53,17 +53,25 @@ protected:
 		Portfolio& portfolio
 	);
 
+	[[nodiscard]] std::expected<bool,AgisException> set_allocation(
+		ExchangeView& exchange_view,
+		double epsilon,
+		bool clear_missing = true
+	) noexcept;
+
+	std::optional<Trade*> get_trade_mut(size_t asset_index) const noexcept;
 	AGIS_API void place_market_order(size_t asset_index, double units);
 	AGIS_API size_t get_strategy_index() const noexcept;
 	AGIS_API std::optional<size_t> get_asset_index(std::string const& asset_id);
 	
-	Portfolio* get_portfolio() const noexcept;
 
 	void reset() noexcept;
 	virtual std::expected<bool,AgisException> step() = 0;
 
 public:
+	AGIS_API std::optional<Trade const*> get_trade(size_t asset_index) const noexcept;
 	AGIS_API double get_cash() const noexcept;
+	AGIS_API double get_nlv() const noexcept;
 	AGIS_API size_t get_strategy_index();
 	AGIS_API std::string const& get_strategy_id() const noexcept{ return _strategy_id; }
 

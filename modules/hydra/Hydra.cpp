@@ -22,6 +22,7 @@ struct HydraPrivate
 	ankerl::unordered_dense::map<std::string, Portfolio*> portfolios;
 	ankerl::unordered_dense::map<std::string, Strategy*> strategies;
 	Portfolio master_portfolio;
+	size_t current_index = 0;
 	tbb::task_group pool;
 	bool built = false;
 
@@ -54,14 +55,16 @@ Hydra::~Hydra()
 std::expected<bool, AgisException> 
 Hydra::run() noexcept
 {
+	// build and reset all members as needed 
 	auto lock = std::unique_lock(_mutex);
 	if(!_p->built)
 	{
 		AGIS_ASSIGN_OR_RETURN(res, build());
 	}
-	this->reset();
+	if (_p->current_index == 0) this->reset();
+
 	auto index = _p->exchanges.get_dt_index();
-	for (size_t i = 0; i < index.size(); ++i)
+	for (size_t i = _p->current_index; i < index.size(); ++i)
 	{
 		AGIS_ASSIGN_OR_RETURN(res, step());
 	}
@@ -112,6 +115,7 @@ Hydra::step() noexcept
 	// evaluate master portfolio at current time and prices
 	_p->master_portfolio.evaluate(true, false);
 
+	_p->current_index++;
 	return true;
 }
 
@@ -122,6 +126,7 @@ Hydra::reset() noexcept
 {
 	_p->exchanges.reset();
 	_p->master_portfolio.reset();
+	_p->current_index = 0;
 	return true;
 }
 
@@ -192,7 +197,7 @@ Hydra::register_strategy(std::unique_ptr<Strategy> strategy)
 {
 	auto lock = std::unique_lock(_mutex);
 	_p->strategies[strategy->get_strategy_id()] = strategy.get();
-	auto portfolio = strategy->get_portfolio();
+	auto portfolio = strategy->get_portfolio_mut();
 	return portfolio->add_strategy(std::move(strategy));
 }
 

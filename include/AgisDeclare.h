@@ -3,6 +3,7 @@
 namespace Agis
 {
 	constexpr double UNIT_EPSILON = 1e-13;
+	constexpr double ORDER_EPSILON = 1e-8;
 
 	class Asset;
 

@@ -82,6 +82,7 @@ public:
 	std::string const& get_exchange_id() const noexcept;
 	std::string const& get_dt_format() const noexcept;
 	std::string const& get_source() const noexcept{ return _source; }
+	std::optional<double> get_market_price(size_t asset_index) const noexcept;
 	std::optional<size_t> get_asset_index(std::string const& asset_id) const noexcept;
 	std::vector<long long> const& get_dt_index() const noexcept;
 	size_t get_index_offset() const noexcept { return _index_offset; }

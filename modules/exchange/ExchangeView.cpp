@@ -22,6 +22,19 @@ ExchangeView::ExchangeView(Exchange const* exchange)
 
 
 //============================================================================
+void
+ExchangeView::set_weights(ExchangeViewOpp opp) noexcept
+{
+	switch (opp)
+	{
+	case ExchangeViewOpp::UNIFORM:
+		uniform_weights();
+		break;
+	}
+}
+
+	
+//============================================================================
 std::optional<double>
 ExchangeView::get_allocation(size_t index) const noexcept
 {
@@ -105,6 +118,17 @@ bool compareBySecondValueDesc(const std::optional<Allocation>& a, const std::opt
 	if (!a) return false;
 	if (!b) return true;
 	return a->amount > b->amount;
+}
+
+
+//============================================================================
+void ExchangeView::uniform_weights()
+{
+	auto weight = 1.0f / static_cast<double>(_allocation_count);
+	for (auto& pair : _view) {
+		if (!pair) continue;
+		pair->amount = weight;
+	}
 }
 
 

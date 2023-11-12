@@ -235,6 +235,90 @@ TEST_F(PortfolioTest, OrderIncrease) {
 	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), cash2);
 }
 
+
+TEST_F(PortfolioTest, OrderMultiStrat) {
+	hydra->build();
+	hydra->step();
+	double units1 = 1.0f;
+	double units2 = -.50f;
+	double market_price = 101.5;
+	double next_price = 99.0f;
+
+	// one portfolio long in step 1
+	strategy1->place_market_order(asset_id_2, units1);
+	hydra->step();
+	// one portfolio short in step 2
+	strategy2->place_market_order(asset_id_2, units2);
+	auto master_cash = cash1 + cash2 + .5 * (99.0 - 101.5) - .5 * 101.5;
+	EXPECT_DOUBLE_EQ(master_portfolio->get_cash(), master_cash);
+	EXPECT_DOUBLE_EQ(portfolio1->get_cash(), cash1 - 1 * 101.5);
+	EXPECT_DOUBLE_EQ(portfolio2->get_cash(), cash2 + .5 * (99.0));
+
+	auto master_position = master_portfolio->get_position(asset_id_2).value();
+	auto position1 = portfolio1->get_position(asset_id_2).value();
+	auto position2 = portfolio2->get_position(asset_id_2).value();
+	EXPECT_DOUBLE_EQ(master_position->get_units(), units1 + units2);
+	EXPECT_DOUBLE_EQ(position1->get_units(), units1);
+	EXPECT_DOUBLE_EQ(position2->get_units(), units2);
+
+	double master_nlv = 1 * (99.0 - 101.5) + cash1 + cash2;
+	double portfolio1_nlv = 1 * (99.0 - 101.5) + cash1;
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), portfolio1_nlv);
+	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), cash2);
+
+	hydra->step();
+	double current_price = 97.0f;
+	double portfolio2_nlv = units2 * (current_price - 99.0f) + cash2;
+	master_nlv += (units1+units2) * (current_price - next_price);
+	portfolio1_nlv += units1 * (current_price - next_price);
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), portfolio1_nlv);
+	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), portfolio2_nlv);
+
+	// close portfolio 1s long position
+	strategy1->place_market_order(asset_id_2, -units1);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), portfolio1->get_cash());
+	EXPECT_FALSE(portfolio1->get_position(asset_id_2).has_value());
+	position2 = portfolio2->get_position(asset_id_2).value();
+	EXPECT_DOUBLE_EQ(position2->get_nlv(), current_price * units2);
+
+	hydra->step();
+	double current_price2 = 101.5;
+	master_nlv += (units2) * (current_price2 - current_price);
+	portfolio2_nlv += units2 * (current_price2 - current_price);
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), portfolio1_nlv);
+	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), portfolio2_nlv);
+	// portfolio1 open long of equal size to portfolio2s short
+	strategy1->place_market_order(asset_id_2, -units2);
+	master_position = master_portfolio->get_position(asset_id_2).value();
+	position1 = portfolio1->get_position(asset_id_2).value();
+	position2 = portfolio2->get_position(asset_id_2).value();
+	EXPECT_DOUBLE_EQ(master_position->get_units(), 0.0f);
+	EXPECT_DOUBLE_EQ(position1->get_units(), -units2);
+	EXPECT_DOUBLE_EQ(position2->get_units(), units2);
+
+	// test force close of position at close of last time step
+	hydra->run();
+	double last_price = 96.0f;
+	portfolio1_nlv += -units2 * (last_price - current_price2);
+	portfolio2_nlv += units2 * (last_price - current_price2);
+	EXPECT_DOUBLE_EQ(master_portfolio->get_nlv(), master_nlv);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), portfolio1_nlv);
+	EXPECT_DOUBLE_EQ(portfolio2->get_nlv(), portfolio2_nlv);
+	EXPECT_DOUBLE_EQ(strategy1->get_nlv(), portfolio1_nlv);
+	EXPECT_DOUBLE_EQ(strategy2->get_nlv(), portfolio2_nlv);
+	EXPECT_FALSE(master_portfolio->get_position(asset_id_2).has_value());
+	EXPECT_FALSE(portfolio1->get_position(asset_id_2).has_value());
+	EXPECT_FALSE(portfolio2->get_position(asset_id_2).has_value());
+
+	auto& exchanges = hydra->get_exchanges();
+	auto asset_index_2 = exchanges.get_asset_index(asset_id_2).value();
+	EXPECT_FALSE(strategy1->get_trade(asset_index_2).has_value());
+	EXPECT_FALSE(strategy2->get_trade(asset_index_2).has_value());
+}
+
 TEST_F(PortfolioTest, OrderDecrease) {
 	hydra->build();
 	hydra->step();

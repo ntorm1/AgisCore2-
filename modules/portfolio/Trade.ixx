@@ -38,6 +38,7 @@ private:
     long long _open_time;
     long long _close_time;
     size_t _bars_held;
+    mutable bool _strategy_alloc_touch = false;
 
     size_t _trade_id;
     size_t _asset_index;
@@ -49,10 +50,14 @@ private:
     void reduce(Order const* filled_order);
     void adjust(Order const* filled_order);
     void evaluate(double market_price, bool on_close, bool is_reprice);
+    UniquePtr<Order> generate_trade_inverse();
     Asset const& get_asset() const { return _asset; }
     Strategy* get_strategy_mut() const { return _strategy; }
 
+
 public:
+    bool is_strategy_alloc_touch() const noexcept { return _strategy_alloc_touch; }
+    void set_strategy_alloc_touch(bool b) const noexcept { _strategy_alloc_touch = b; }
     Trade(Strategy* strategy, Order const* order, Position* parent_position) noexcept;
     ~Trade() = default;
     AGIS_API size_t get_portfolio_index() const { return _portfolio_index; }

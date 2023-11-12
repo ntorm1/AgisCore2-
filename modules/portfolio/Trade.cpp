@@ -21,7 +21,7 @@ Trade::Trade(Strategy* strategy, Order const* order, Position* parent_position) 
 {
 	_trade_id = _trade_counter++;
 	_strategy = strategy;
-	_portfolio = strategy->get_portfolio();
+	_portfolio = strategy->get_portfolio_mut();
 	_units = order->get_units();
 	_avg_price = order->get_fill_price();
 	_open_price = _avg_price;
@@ -41,6 +41,7 @@ Trade::Trade(Strategy* strategy, Order const* order, Position* parent_position) 
 	
 }
 
+
 //============================================================================
 void Trade::close(Order const* filled_order)
 {
@@ -48,6 +49,8 @@ void Trade::close(Order const* filled_order)
 	_close_time = filled_order->get_fill_time();
 	_realized_pnl += (_units  * (_close_price - _avg_price));
 	_realized_pnl = 0;
+	// clear the trade from the parent strategy's trade map
+	_strategy->remove_trade(_asset_index);
 }
 
 
@@ -110,6 +113,21 @@ Trade::evaluate(double market_price, bool on_close, bool is_reprice)
 	_unrealized_pnl = unrealized_pl_new;
 	_last_price = market_price;
 	if (on_close && !is_reprice) { _bars_held++; }
+}
+
+UniquePtr<Order> Trade::generate_trade_inverse()
+{
+	auto order = std::make_unique<Order>(
+		OrderType::MARKET_ORDER,
+		_asset_index,
+		-1 * _units,
+		_strategy,
+		0,
+		0,
+		0
+	);
+	order->set_parent_portfolio(_portfolio);
+	return std::move(order);
 }
 
 

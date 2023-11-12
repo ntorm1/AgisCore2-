@@ -251,6 +251,23 @@ Exchange::get_dt_format() const noexcept
 
 
 //============================================================================
+std::optional<double>
+Exchange::get_market_price(size_t asset_index) const noexcept
+{
+	if (asset_index < this->_index_offset)
+	{
+		return std::nullopt;
+	}
+	auto asset_index_offset = asset_index - this->_index_offset;
+	if (asset_index_offset >= this->_p->assets.size())
+	{
+		return std::nullopt;
+	}
+	return this->_p->assets[asset_index_offset]->get_market_price(_p->on_close);
+}
+
+
+//============================================================================
 std::optional<size_t>
 Exchange::get_asset_index(std::string const& asset_id) const noexcept
 {
