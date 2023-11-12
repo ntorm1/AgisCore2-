@@ -1,5 +1,10 @@
 module;
 #define NOMINMAX
+#ifdef AGISCORE_EXPORTS
+#define AGIS_API __declspec(dllexport)
+#else
+#define AGIS_API __declspec(dllimport)
+#endif
 #include "AgisDeclare.h"
 #include "AgisAST.h"
 export module ExchangeNode;
@@ -12,7 +17,6 @@ import <variant>;
 import BaseNode;
 import AgisError;
 import ExchangeViewModule;
-import ExchangeModule;
 
 namespace Agis
 {
@@ -26,14 +30,14 @@ export class ExchangeNode : public OpperationNode<Exchange const*>
 {
 public:
 	explicit ExchangeNode(Exchange const* exchange) : _exchange(std::move(exchange)) {}
-	~ExchangeNode();
+	AGIS_API ~ExchangeNode();
 
 	Exchange const* evaluate() const noexcept override
 	{
 		return _exchange;
 	}
 
-	std::optional<UniquePtr<AssetLambdaReadNode>> create_asset_lambda_read_node(std::string const&, int) const noexcept;
+	AGIS_API std::optional<UniquePtr<AssetLambdaReadNode>> create_asset_lambda_read_node(std::string const&, int) const noexcept;
 
 private:
 	Exchange const* _exchange;
@@ -45,12 +49,12 @@ private:
 export class ExchangeViewNode : public ExpressionNode<std::optional<AgisException>>
 {
 public:
-	ExchangeViewNode(
+	AGIS_API ExchangeViewNode(
 		SharedPtr<ExchangeNode const> exchange_node,
 		UniquePtr<AssetLambdaNode> asset_lambda
 	);
 
-	std::optional<AgisException> evaluate() noexcept override;
+	AGIS_API std::optional<AgisException> evaluate() noexcept override;
 
 	ExchangeView const& get_view() const { return _exchange_view; }
 

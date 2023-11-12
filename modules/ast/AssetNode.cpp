@@ -26,23 +26,46 @@ AssetLambdaReadNode::evaluate(Asset const* asset) const noexcept
 
 
 //============================================================================
+double
+AssetOpperationNode::execute_opperation(double left, double right) const noexcept
+{
+	switch (_opp) {
+	case AgisOperator::INIT:
+		return left;
+	case AgisOperator::IDENTITY:
+		return right;
+	case AgisOperator::ADD:
+		return right + left;
+	case AgisOperator::SUBTRACT:
+		return right - left;
+	case AgisOperator::MULTIPLY:
+		return right * left;
+	case AgisOperator::DIVIDE:
+		return right / left;
+	default:
+		return AGIS_NAN;
+	}
+}
+
+
+//============================================================================
 std::optional<double>
 AssetOpperationNode::evaluate(Asset const* asset) const noexcept
 {
 	// evaluate right node which could be nullopt or nan
-	auto res = _right_node->evaluate(asset);
-	if(!res || std::isnan(*res))
-		return res;
+	auto right_res = _right_node->evaluate(asset);
+	if(!right_res || std::isnan(*right_res))
+		return right_res;
 
 	// if no left node return opp applied to right result
 	if (!_left_node)
-		return _opp(0.0f,*res);
+		return execute_opperation(0.0f,*right_res);
 
 	// execute left node and return opp applied to left and right result
 	auto left_res = _left_node.value()->evaluate(asset);
 	if(!left_res || std::isnan(*left_res))
 		return left_res;
-	return _opp(*left_res, *res);
+	return execute_opperation(*left_res, *right_res);
 }
 
 
@@ -68,7 +91,8 @@ AssetLambdaLogicalNode::AssetLambdaLogicalNode(
 
 
 //============================================================================
-std::optional<double> AssetLambdaLogicalNode::evaluate(Asset const* asset) const noexcept
+std::optional<double>
+AssetLambdaLogicalNode::evaluate(Asset const* asset) const noexcept
 {
 	// execute left node to get value
 	auto res = _left_node->evaluate(asset);

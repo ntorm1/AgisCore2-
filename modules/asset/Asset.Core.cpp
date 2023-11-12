@@ -136,7 +136,7 @@ Asset::get_market_price(bool is_close) const noexcept
 //============================================================================
 std::optional<double> Asset::get_asset_feature(size_t column, int index) const noexcept
 {
-	if (abs(index) > static_cast<int>(_p->_current_index - 1) || index > 0)
+	if (_p->_current_index == 0 || abs(index) > static_cast<int>(_p->_current_index - 1) || index > 0)
 	{
 		return std::nullopt;
 	}
@@ -148,7 +148,8 @@ std::optional<double> Asset::get_asset_feature(size_t column, int index) const n
 	{
 		return std::nullopt;
 	}
-	return *(_p->_data_ptr + _p->_open_index - _p->_cols);
+	size_t index_offset = (index == 0) ? 0 : static_cast<size_t>(std::abs(index) * _p->_cols);
+	return *(_p->_data_ptr + column - _p->_cols - index_offset);
 }
 
 

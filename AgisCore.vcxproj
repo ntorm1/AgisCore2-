@@ -166,12 +166,14 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="modules\asset\Asset.Private.cpp" />
+    <ClCompile Include="modules\ast\AgisStrategyTree.ixx" />
     <ClCompile Include="modules\ast\AssetNode.cpp" />
     <ClCompile Include="modules\ast\AssetNode.ixx" />
     <ClCompile Include="modules\ast\BaseNode.cpp" />
     <ClCompile Include="modules\ast\BaseNode.ixx" />
     <ClCompile Include="modules\ast\ExchangeNode.cpp" />
     <ClCompile Include="modules\ast\ExchangeNode.ixx" />
+    <ClCompile Include="modules\ast\LogicalNode.ixx" />
     <ClCompile Include="modules\exchange\Exchange.Core.cpp" />
     <ClCompile Include="modules\exchange\Exchange.Core.ixx" />
     <ClCompile Include="modules\exchange\ExchangeMap.cpp" />

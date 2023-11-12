@@ -5,9 +5,11 @@
 
 import HydraModule;
 import ExchangeMapModule;
+import AgisStrategyTree;
 import SerializeModule;
 
 using namespace Agis;
+using namespace Agis::AST;
 
 namespace AgisExchangeTest {
 
@@ -27,6 +29,8 @@ namespace AgisExchangeTest {
 	constexpr long long t3 = 960440400000000000;
 	constexpr long long t4 = 960526800000000000;
 	constexpr long long t5 = 960786000000000000;
+	constexpr double epsilon = 1e-7;  
+
 };
 
 using namespace AgisExchangeTest;
@@ -36,7 +40,9 @@ class SimpleExchangeTests : public ::testing::Test
 {
 protected:
 	std::shared_ptr<Hydra> hydra;
-
+	size_t asset_index_1;
+	size_t asset_index_2;
+	size_t asset_index_3;
 	void SetUp() override
 	{
 		hydra = std::make_shared<Hydra>();
@@ -45,6 +51,10 @@ protected:
 			dt_format,
 			exchange1_path
 		);
+		auto& exchanges = hydra->get_exchanges();
+		asset_index_1 = exchanges.get_asset_index(asset_id_1).value();
+		asset_index_2 = exchanges.get_asset_index(asset_id_2).value();
+		asset_index_3 = exchanges.get_asset_index(asset_id_3).value();
 	}
 };
 
@@ -118,8 +128,7 @@ TEST_F(SimpleExchangeTests, TestRunTo) {
 
 }
 
-TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {
-	// create rapid json doc and get the allocator
+TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {	// create rapid json doc and get the allocator
 	rapidjson::Document doc;
 	auto& allocator = doc.GetAllocator();
 	auto res = serialize_hydra(allocator, *hydra, "test.json");
@@ -139,3 +148,43 @@ TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {
 	EXPECT_TRUE(new_exchanges.asset_exists(asset_id_1));
 	EXPECT_TRUE(new_exchanges.asset_exists(asset_id_2));
 }
+
+TEST_F(SimpleExchangeTests, TestExchangeViewNode) {
+	hydra->build();
+	auto exchange = hydra->get_exchange(exchange_id_1).value();
+	auto exchange_node = std::make_shared<ExchangeNode>(exchange);
+
+	auto previous_price = exchange_node->create_asset_lambda_read_node("CLOSE", -1);
+	auto current_price = exchange_node->create_asset_lambda_read_node("CLOSE", 0);
+	EXPECT_TRUE(previous_price.has_value());
+	EXPECT_TRUE(current_price.has_value());
+
+	auto return_node = std::make_unique<AssetOpperationNode>(
+		std::move(previous_price.value()),
+		std::move(current_price.value()),
+		AgisOperator::DIVIDE
+	);
+	auto exchange_view_node = ExchangeViewNode(exchange_node, std::move(return_node));
+	auto res = exchange_view_node.evaluate();
+	EXPECT_FALSE(res.has_value()); 
+	auto& view = exchange_view_node.get_view();
+	EXPECT_EQ(view.size(), 3);
+	EXPECT_EQ(view.allocation_count(), 0);
+
+	hydra->step();
+	EXPECT_FALSE(exchange_view_node.evaluate().has_value());
+	EXPECT_EQ(view.allocation_count(), 0);
+
+	hydra->step();
+	EXPECT_FALSE(exchange_view_node.evaluate().has_value());
+	EXPECT_EQ(view.allocation_count(), 2);
+	EXPECT_FALSE(view.get_allocation(asset_index_1));
+	auto v2 = view.get_allocation(asset_index_2);
+	auto v3 = view.get_allocation(asset_index_3);
+	double v2_actual = 99.0f / 101.5f;
+	double v3_actual = 101.4f / 101.5f;
+	EXPECT_TRUE(abs(v2.value()-v2_actual) < epsilon);
+	EXPECT_TRUE(abs(v3.value()-v3_actual) < epsilon);
+
+}
+

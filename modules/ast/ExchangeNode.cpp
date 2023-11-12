@@ -21,10 +21,10 @@ namespace AST
 ExchangeViewNode::ExchangeViewNode(
 	SharedPtr<ExchangeNode const> exchange_node,
 	UniquePtr<AssetLambdaNode> _assetLambdaNode):
-	_exchange_node(std::move(exchange_node)),
+	_exchange_node(exchange_node),
 	_asset_lambda(std::move(_assetLambdaNode)),
-	_exchange_view(_exchange_node->evaluate()),
-	_exchange(_exchange_node->evaluate())
+	_exchange_view(exchange_node->evaluate()),
+	_exchange(exchange_node->evaluate())
 {
 	auto& assets = _exchange->get_assets();
 	for (auto& asset : assets)

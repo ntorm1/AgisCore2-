@@ -1,6 +1,10 @@
 module;
-
 #pragma once
+#ifdef AGISCORE_EXPORTS
+#define AGIS_API __declspec(dllexport)
+#else
+#define AGIS_API __declspec(dllimport)
+#endif
 #include "AgisDeclare.h"
 #include "AgisAST.h"
 
@@ -20,6 +24,9 @@ public:
 	using Allocation = std::optional<double>;
 	ExchangeView(Exchange const* exchange);
 
+	size_t size() const noexcept { return _view.size(); }
+	size_t allocation_count() const noexcept { return _allocation_count; }
+	AGIS_API std::optional<double> get_allocation(size_t index) const noexcept;
 
 	void remove_allocation(size_t index);
 	void set_allocation(size_t index, double value);

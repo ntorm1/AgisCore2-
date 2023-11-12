@@ -1,5 +1,10 @@
 module;
 #define NOMINMAX
+#ifdef AGISCORE_EXPORTS
+#define AGIS_API __declspec(dllexport)
+#else
+#define AGIS_API __declspec(dllimport)
+#endif
 #include "AgisDeclare.h"
 
 export module AssetNode;
@@ -9,6 +14,7 @@ import <string>;
 import <variant>;
 
 import BaseNode;
+import LogicalNode;
 
 namespace Agis
 {
@@ -56,6 +62,8 @@ public:
 		this->set_warmup(abs(index));
 	}
 
+	AGIS_API ~AssetLambdaReadNode() = default;
+
 	std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
 protected:
@@ -73,7 +81,7 @@ public:
 	AssetOpperationNode(
 		std::optional<UniquePtr<AssetLambdaNode>> left_node,
 		UniquePtr<AssetLambdaReadNode>&& right_node,
-		AgisOperation opp
+		AgisOperator opp
 	) noexcept : AssetLambdaNode(AssetLambdaType::OPP),
 	_left_node(std::move(left_node)),
 	_right_node(std::move(right_node)),
@@ -83,13 +91,15 @@ public:
 		this->set_warmup(w);
 	}
 
-	std::optional<double> evaluate(Asset const* asset) const noexcept override;
+	double execute_opperation(double left, double right) const noexcept;
+
+	AGIS_API std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
 
 private:
 	std::optional<UniquePtr<AssetLambdaNode>> _left_node;
 	UniquePtr<AssetLambdaReadNode> _right_node;
-	AgisOperation _opp;
+	AgisOperator _opp;
 };
 
 

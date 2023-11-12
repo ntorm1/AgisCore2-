@@ -1,3 +1,9 @@
+module;
+#ifdef AGISCORE_EXPORTS
+#define AGIS_API __declspec(dllexport)
+#else
+#define AGIS_API __declspec(dllimport)
+#endif
 export module BaseNode;
 
 import <functional>;
@@ -40,42 +46,8 @@ public:
 };
 
 
-export typedef std::function<double(double, double)> AgisOperation;
-export typedef std::function<bool(double, double)> AgisLogicalOperation;
 
 
-export inline const AgisOperation agis_init = [](double a, double b) { return b; };
-export inline const AgisOperation agis_identity = [](double a, double b) { return a; };
-export inline const AgisOperation agis_add = [](double a, double b) { return a + b; };
-export inline const AgisOperation agis_subtract = [](double a, double b) { return a - b; };
-export inline const AgisOperation agis_multiply = [](double a, double b) { return a * b; };
-export inline const AgisOperation agis_divide = [](double a, double b) { return a / b; };
-
-
-export inline const AgisLogicalOperation agis_greater_than = [](double a, double b) { return a > b; };
-export inline const AgisLogicalOperation agis_less_than = [](double a, double b) { return a < b; };
-export inline const AgisLogicalOperation agis_greater_than_or_equal = [](double a, double b) { return a >= b; };
-export inline const AgisLogicalOperation agis_less_than_or_equal = [](double a, double b) { return a <= b; };
-export inline const AgisLogicalOperation agis_equal = [](double a, double b) { return a == b; };
-export inline const AgisLogicalOperation agis_not_equal = [](double a, double b) { return a != b; };
-
-export enum AgisLogicalOperator : uint8_t {
-	GREATER_THAN,
-	LESS_THAN,
-	GREATER_THAN_OR_EQUAL,
-	LESS_THAN_OR_EQUAL,
-	EQUAL,
-	NOT_EQUAL
-};
-
-export enum AgisOperator : uint8_t {
-	INIT,
-	IDENTITY,
-	ADD,
-	SUBTRACT,
-	MULTIPLY,
-	DIVIDE
-};
 
 
 } // namespace AST

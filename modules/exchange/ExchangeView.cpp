@@ -19,6 +19,17 @@ ExchangeView::ExchangeView(Exchange const* exchange)
 
 
 //============================================================================
+std::optional<double>
+ExchangeView::get_allocation(size_t index) const noexcept
+{
+	if (index >= _view.size())
+	{
+		return std::nullopt;
+	}
+	return _view[index];
+}
+
+//============================================================================
 void ExchangeView::remove_allocation(size_t index)
 {
 	if (index >= _view.size())
