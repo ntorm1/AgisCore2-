@@ -158,6 +158,7 @@
   <ItemGroup>
     <ClInclude Include="external\include\ankerl\unordered_dense.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="include\AgisAST.h" />
     <ClInclude Include="include\AgisDeclare.h" />
     <ClInclude Include="include\AgisMacros.h" />
     <ClInclude Include="pch.h" />
@@ -169,10 +170,14 @@
     <ClCompile Include="modules\ast\AssetNode.ixx" />
     <ClCompile Include="modules\ast\BaseNode.cpp" />
     <ClCompile Include="modules\ast\BaseNode.ixx" />
+    <ClCompile Include="modules\ast\ExchangeNode.cpp" />
+    <ClCompile Include="modules\ast\ExchangeNode.ixx" />
     <ClCompile Include="modules\exchange\Exchange.Core.cpp" />
     <ClCompile Include="modules\exchange\Exchange.Core.ixx" />
     <ClCompile Include="modules\exchange\ExchangeMap.cpp" />
     <ClCompile Include="modules\exchange\ExchangeMap.ixx" />
+    <ClCompile Include="modules\exchange\ExchangeView.cpp" />
+    <ClCompile Include="modules\exchange\ExchangeView.ixx" />
     <ClCompile Include="modules\hydra\Hydra.cpp" />
     <ClCompile Include="modules\hydra\Hydra.ixx" />
     <ClCompile Include="modules\io\Serialize.cpp" />
@@ -191,7 +196,6 @@
     <ClCompile Include="modules\asset\Asset.Private.ixx" />
     <ClCompile Include="modules\standard\AgisError.ixx" />
     <ClCompile Include="modules\standard\AgisFileUtils.ixx" />
-    <ClCompile Include="modules\standard\AgisPointer.ixx" />
     <ClCompile Include="modules\standard\AgisTimeUtils.ixx" />
     <ClCompile Include="modules\strategy\Strategy.cpp" />
     <ClCompile Include="modules\strategy\Strategy.ixx" />

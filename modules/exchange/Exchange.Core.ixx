@@ -19,7 +19,6 @@ import <shared_mutex>;
 
 import AgisError;
 
-
 namespace Agis
 {
 
@@ -40,14 +39,7 @@ private:
 	/// </summary>
 	ankerl::unordered_dense::map<size_t, Portfolio*> registered_portfolios;
 
-	Exchange(
-		std::string exchange_id,
-		size_t exchange_index,
-		std::string dt_format,
-		std::string source
-	);
-
-	static Exchange* create(
+	static UniquePtr<Exchange> create(
 		std::string exchange_name,
 		std::string dt_format,
 		size_t exchange_index,
@@ -70,21 +62,30 @@ private:
 	bool is_valid_order(Order const* order) const noexcept;
 	
 	void set_index_offset(size_t offset) noexcept { _index_offset = offset;}
-	std::vector<Asset*>& get_assets_mut() noexcept;
+	std::vector<UniquePtr<Asset>>& get_assets_mut() noexcept;
 
 public:
-	~Exchange();
+	Exchange(
+		std::string exchange_id,
+		size_t exchange_index,
+		std::string dt_format,
+		std::string source
+	) noexcept;
+
+	AGIS_API ~Exchange();
 
 	Exchange(Exchange const&) = delete;
 	Exchange& operator=(Exchange const&) = delete;
 	size_t get_exchange_index() const noexcept;
+	std::optional<size_t> get_column_index(std::string const& column) const noexcept;
 	long long get_dt() const noexcept;
 	std::string const& get_exchange_id() const noexcept;
 	std::string const& get_dt_format() const noexcept;
 	std::string const& get_source() const noexcept{ return _source; }
 	std::optional<size_t> get_asset_index(std::string const& asset_id) const noexcept;
 	std::vector<long long> const& get_dt_index() const noexcept;
-	AGIS_API std::vector<Asset*> const& get_assets() const noexcept;
+	size_t get_index_offset() const noexcept { return _index_offset; }
+	AGIS_API std::vector<UniquePtr<Asset>> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;
 
 

@@ -22,7 +22,6 @@ import AgisError;
 namespace Agis
 {
 
-
 struct ExchangeMapPrivate;
 
 //============================================================================
@@ -32,7 +31,7 @@ export class ExchangeFactory
 private:
 	size_t _exchange_counter = 0;
 
-	[[nodiscard]] std::expected<Exchange*, AgisException> create_exchange(
+	[[nodiscard]] std::expected<UniquePtr<Exchange>, AgisException> create_exchange(
 		std::string exchange_id,
 		std::string dt_format,
 		std::string source
@@ -47,7 +46,6 @@ export class ExchangeMap
 	friend class Portfolio;
 private:
 	ExchangeMapPrivate* _p;
-
 	std::expected<bool, AgisException> step() noexcept;
 	std::expected<bool, AgisException> build() noexcept;
 	void reset() noexcept;

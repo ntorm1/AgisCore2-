@@ -14,7 +14,7 @@ namespace Agis
 
 
 //============================================================================
-std::expected<Exchange*, AgisException>
+std::expected<UniquePtr<Exchange>, AgisException>
 ExchangeFactory::create_exchange(
 		std::string exchange_id,
 		std::string dt_format,
@@ -24,11 +24,10 @@ ExchangeFactory::create_exchange(
 	auto res = exchange->load_assets();
 	if (!res)
 	{
-		Exchange::destroy(exchange);
 		return std::unexpected(res.error());
 	}
 	_exchange_counter++;
-	return exchange;
+	return std::move(exchange);
 }
 
 
@@ -43,7 +42,7 @@ struct ExchangeMapPrivate
 
 	std::unordered_map<std::string, size_t> asset_indecies;
 	std::vector<Asset*> assets;
-	std::vector<Exchange*> exchanges;
+	std::vector<UniquePtr<Exchange>> exchanges;
 	std::unordered_map<std::string, size_t> exchange_indecies;
 
 };
@@ -56,7 +55,7 @@ ExchangeMap::create_exchange(std::string exchange_id, std::string dt_format, std
 	// check if exchange already exists
 	if (_p->exchange_indecies.find(exchange_id) != _p->exchange_indecies.end())
 	{
-		return std::unexpected(AgisException("Exchange already exists"));
+		return std::unexpected<AgisException>("Exchange already exists");
 	}  
 
 	// create the new exchange and copy over asset pointers
@@ -64,7 +63,7 @@ ExchangeMap::create_exchange(std::string exchange_id, std::string dt_format, std
 	auto& exchange_assets = exchange->get_assets();
 	for (auto& asset : exchange_assets)
 	{
-		_p->assets.push_back(asset);
+		_p->assets.push_back(asset.get());
 		_p->asset_indecies.emplace(asset->get_id(), _p->assets.size() - 1);
 	}
 	// set the exchanges index offest. When exchange is indexing into it's asset vector
@@ -72,9 +71,10 @@ ExchangeMap::create_exchange(std::string exchange_id, std::string dt_format, std
 	exchange->set_index_offset(_p->assets.size() - _p->assets.size());
 	
 	// update the map with exchange info
-	_p->exchanges.push_back(exchange);
+	auto exchange_ptr = exchange.get();
+	_p->exchanges.push_back(std::move(exchange));
 	_p->exchange_indecies[exchange_id] = _p->exchanges.size() - 1;
-	return exchange;
+	return exchange_ptr;
 }
 
 
@@ -88,7 +88,7 @@ ExchangeMap::ExchangeMap()
 //============================================================================
 ExchangeMap::~ExchangeMap()
 {
-delete _p;
+	delete _p;
 }
 
 
@@ -245,7 +245,7 @@ ExchangeMap::get_exchange_mut(std::string const& id) const noexcept
 	{
 		return std::unexpected(AgisException("Exchange does not exist"));
 	}
-	return _p->exchanges[it->second];
+	return _p->exchanges[it->second].get();
 }
 
 

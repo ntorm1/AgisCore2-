@@ -39,7 +39,7 @@ Portfolio::Portfolio(
 	if (exchange)
 	{
 		_exchange = exchange.value();
-		_exchange->register_portfolio(this);
+		_exchange.value()->register_portfolio(this);
 	}
 }
 
@@ -61,7 +61,7 @@ Portfolio::get_position(std::string const& asset_id) const noexcept
 	// get the asset index from the exchange map or exchange
 	std::optional<size_t> asset_index;
 	if (_exchange_map) asset_index = _exchange_map.value()->get_asset_index(asset_id);
-	else asset_index = _exchange->get_asset_index(asset_id);
+	else asset_index = _exchange.value()->get_asset_index(asset_id);
 
 	if(!asset_index) return std::nullopt;
 
@@ -218,7 +218,7 @@ void
 Portfolio::place_order(std::unique_ptr<Order> order) noexcept
 {
 	if (!_exchange) return;
-	auto res = _exchange->place_order(std::move(order));
+	auto res = _exchange.value()->place_order(std::move(order));
 	if(res)
 	{
 		auto o = std::move(res.value());
@@ -450,10 +450,6 @@ void Portfolio::set_child_portfolio_position_parents(Position* p) noexcept
 std::optional<Exchange const*>
 Portfolio::get_exchange() const noexcept
 {
-	if(!_exchange)
-	{
-		return std::nullopt;
-	}
 	return _exchange;
 }
 

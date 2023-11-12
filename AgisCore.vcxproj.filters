@@ -30,6 +30,9 @@
     <ClInclude Include="external\include\ankerl\unordered_dense.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\AgisAST.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -122,9 +125,6 @@
     <ClCompile Include="modules\io\Serialize.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="modules\standard\AgisPointer.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="modules\ast\BaseNode.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -135,6 +135,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="modules\ast\BaseNode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\ast\ExchangeNode.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\exchange\ExchangeView.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\exchange\ExchangeView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="modules\ast\ExchangeNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -199,8 +199,18 @@ Asset::get_column_names() const noexcept {
 	return names;
 }
 
+
 //============================================================================
-std::expected<Asset*, AgisException>
+size_t
+Asset::get_current_index() const noexcept
+{
+	if (_p->_current_index == 0) return 0;
+	return _p->_current_index - 1;
+}
+
+
+//============================================================================
+std::expected<UniquePtr<Asset>, AgisException>
 AssetFactory::create_asset(
 	std::string asset_name,
 	std::string source
@@ -214,7 +224,7 @@ AssetFactory::create_asset(
 		AGIS_ASSIGN_OR_RETURN(res, asset->load_csv(source, _dt_format));
 		break;
 	}
-	auto m = new Asset(asset, asset_name, _asset_counter);
+	auto m = std::make_unique<Asset>(asset, asset_name, _asset_counter);
 	m->_dt_format = _dt_format;
 	_asset_counter++;
 	return m;

@@ -62,7 +62,6 @@ class PortfolioTest : public ::testing::Test
 {
 protected:
 	std::shared_ptr<Hydra> hydra;
-	Exchange const* exchange1;
 	Portfolio const* master_portfolio;
 	Portfolio* portfolio1;
 	Portfolio* portfolio2;
@@ -87,7 +86,7 @@ protected:
 			portfolio_id_2,
 			exchange_id_1
 		);
-		exchange1 = hydra->get_exchange(exchange_id_1).value();
+		auto e = hydra->get_exchange(exchange_id_1).value();
 		portfolio1 = res1.value();
 		portfolio2 = res2.value();
 		master_portfolio = hydra->get_portfolio("master").value();
@@ -95,13 +94,13 @@ protected:
 		auto strategy = std::make_unique<DummyStrategy>(
 			strategy_id_1,
 			cash1,
-			*exchange1,
+			*e,
 			*portfolio1
 		);
 		auto strategy_2 = std::make_unique<DummyStrategy>(
 			strategy_id_2,
 			cash2,
-			*exchange1,
+			*e,
 			*portfolio2
 		);
 		auto res_strat = hydra->register_strategy(std::move(strategy));

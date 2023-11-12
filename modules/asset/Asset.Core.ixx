@@ -55,9 +55,17 @@ public:
 	std::vector<double> const& get_data() const noexcept;
 	std::optional<std::vector<double>> get_column(std::string const& column_name) const noexcept;
 	std::vector<std::string> get_column_names() const noexcept;
+	size_t get_current_index() const noexcept;
+	inline bool is_streaming() const noexcept 
+	{
+		return _state == AssetState::STREAMING || _state == AssetState::LAST;
+	}
 
-private:
+	// delete copy constructor and assignment operator
+	Asset(const Asset& other) = delete;
+	Asset& operator=(const Asset& other) = delete;
 	Asset(AssetPrivate* asset, std::string asset_id, size_t asset_index);
+private:
 
 	void reset() noexcept;
 	AssetState step(long long global_time) noexcept;
@@ -83,7 +91,7 @@ public:
 		_dt_format = dt_format;
 	}
 
-	std::expected<Asset*, AgisException> create_asset(
+	std::expected<UniquePtr<Asset>, AgisException> create_asset(
 		std::string asset_name,
 		std::string source
 	);

@@ -23,10 +23,10 @@ struct ExchangePrivate
 {
 	std::string exchange_id;
 	size_t exchange_index;
-
+	std::vector<std::string> columns;
 
 	AssetFactory* asset_factory;
-	std::vector<Asset*> assets;
+	std::vector<UniquePtr<Asset>> assets;
 	std::unordered_map<std::string, size_t> asset_index_map;
 	std::vector<std::unique_ptr<Order>> orders;
 
@@ -60,11 +60,8 @@ ExchangePrivate::ExchangePrivate(
 ExchangePrivate::~ExchangePrivate()
 {
 	delete asset_factory;
-	for (auto& asset : assets)
-	{
-		delete asset;
-	}
 }
+
 
 //============================================================================
 Exchange::Exchange(
@@ -72,7 +69,7 @@ Exchange::Exchange(
 	size_t exchange_index,
 	std::string dt_format,
 	std::string source
-)
+) noexcept
 {
 	_source = source;
 	_p = new ExchangePrivate(exchange_id, exchange_index, dt_format);
@@ -92,7 +89,7 @@ std::expected<bool, AgisException> Exchange::load_folder() noexcept
 		// get file name minus the extension
 		auto file_name = file.path().stem().string();
 		AGIS_ASSIGN_OR_RETURN(asset, _p->asset_factory->create_asset(file_name, file.path().string()));
-		_p->assets.push_back(asset);
+		_p->assets.push_back(std::move(asset));
 	}
 
 	return true;
@@ -117,12 +114,24 @@ std::expected<bool, AgisException> Exchange::load_assets() noexcept
 	{
 		return std::unexpected(AgisException("Source path is not a directory"));
 	}
-
 	for (auto& asset : _p->assets)
 	{
 		_p->asset_index_map.emplace(asset->get_id(), asset->get_index());
+		// all assets registered to an exchange must have the same columns
+		if(_p->columns.size() == 0)
+		{
+			_p->columns = asset->get_column_names();
+		}
+		else
+		{
+			auto asset_columns = asset->get_column_names();
+			// if the two vectors are not equal, throw exception
+			if (_p->columns != asset_columns)
+			{
+				return std::unexpected(AgisException("Asset columns do not match"));
+			}
+		}
 	}
-
 	this->build();
 	return true;
 }
@@ -191,7 +200,7 @@ void Exchange::build() noexcept
 
 
 //============================================================================
-std::vector<Asset*>& Exchange::get_assets_mut() noexcept
+std::vector<UniquePtr<Asset>>& Exchange::get_assets_mut() noexcept
 {
 	return _p->assets;
 }
@@ -203,6 +212,20 @@ Exchange::get_exchange_index() const noexcept
 {
 	return _p->exchange_index;
 }
+
+
+//============================================================================
+std::optional<size_t>
+Exchange::get_column_index(std::string const& column) const noexcept
+{
+	auto it = std::find(_p->columns.begin(), _p->columns.end(), column);
+	if (it == _p->columns.end())
+	{
+		return std::nullopt;
+	}
+	return std::distance(_p->columns.begin(), it);
+}
+
 
 //============================================================================
 long long Exchange::get_dt() const noexcept
@@ -247,7 +270,7 @@ Exchange::get_dt_index() const noexcept
 }
 
 //============================================================================
-std::vector<Asset*> const&
+std::vector<UniquePtr<Asset>> const&
 Exchange::get_assets() const noexcept
 {
 	return _p->assets;
@@ -262,14 +285,14 @@ Exchange::~Exchange()
 
 
 //============================================================================
-Exchange*
+UniquePtr<Exchange>
 Exchange::create(
 	std::string exchange_name,
 	std::string dt_format,
 	size_t exchange_index,
 	std::string source)
 {
-	return new Exchange(exchange_name, exchange_index, dt_format, source);
+	return std::make_unique<Exchange>(exchange_name, exchange_index, dt_format, source);
 }
 
 
@@ -299,7 +322,7 @@ Exchange::get_asset(size_t asset_index) const noexcept
 	{
 		return std::nullopt;
 	}
-	return this->_p->assets[asset_index_offset];
+	return this->_p->assets[asset_index_offset].get();
 }
 
 
@@ -336,7 +359,7 @@ void Exchange::process_market_order(Order* order) noexcept
 	asset_index -= this->_index_offset;
 
 	// get asset
-	auto asset = this->_p->assets[asset_index];
+	auto asset = this->_p->assets[asset_index].get();
 
 	// get asset price and fill if possible
 	auto price = asset->get_market_price(_p->on_close);
@@ -416,7 +439,7 @@ Exchange::is_valid_order(Order const* order) const noexcept
 	}
 
 	// validate asset is streaming
-	auto asset = this->_p->assets[asset_index];
+	auto& asset = this->_p->assets[asset_index];
 	if (asset->get_state() != AssetState::STREAMING)
 	{
 		return false;

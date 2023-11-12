@@ -6,13 +6,12 @@ export module AssetNode;
 
 import <optional>;
 import <string>;
+import <variant>;
 
 import BaseNode;
-import AgisPointer;
 
 namespace Agis
 {
-
 
 namespace AST
 {
@@ -25,10 +24,10 @@ enum class AssetLambdaType {
 
 
 //==================================================================================================
-class AssetLambdaNode : public OpperationNode<std::optional<double>, Asset const*>
+export class AssetLambdaNode : public OpperationNode<std::optional<double>,Asset const*>
 {
 public:
-	AssetLambdaNode(AssetLambdaType asset_lambda_type_) :
+	AssetLambdaNode(AssetLambdaType asset_lambda_type_) noexcept :
 		_asset_lambda_type(asset_lambda_type_)
 	{};
 
@@ -36,7 +35,6 @@ public:
 	size_t get_warmup() const noexcept { return this->_warmup; };
 
 protected:
-	virtual void build() noexcept = 0;
 	void set_warmup(size_t w) { this->_warmup = w; };
 
 private:
@@ -50,7 +48,7 @@ private:
 export class AssetLambdaReadNode : public AssetLambdaNode
 {
 public:
-	AssetLambdaReadNode(size_t column, int index) :
+	AssetLambdaReadNode(size_t column, int index) noexcept:
 		AssetLambdaNode(AssetLambdaType::READ),
 		_column(column),
 		_index(index)
@@ -58,9 +56,6 @@ public:
 		this->set_warmup(abs(index));
 	}
 
-	~AssetLambdaReadNode() {}
-
-	void build() noexcept override {}
 	std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
 protected:
@@ -76,28 +71,49 @@ export class AssetOpperationNode : public AssetLambdaNode
 {
 public:
 	AssetOpperationNode(
-		NullableUniquePtr<AssetLambdaNode> left_node,
-		NonNullUniquePtr<AssetLambdaReadNode> right_node,
+		std::optional<UniquePtr<AssetLambdaNode>> left_node,
+		UniquePtr<AssetLambdaReadNode>&& right_node,
 		AgisOperation opp
-	) : AssetLambdaNode(AssetLambdaType::OPP),
+	) noexcept : AssetLambdaNode(AssetLambdaType::OPP),
 	_left_node(std::move(left_node)),
 	_right_node(std::move(right_node)),
 	_opp(opp)
 	{
-		auto w(std::max(_right_node->get_warmup(), _left_node ? _left_node.unwrap()->get_warmup() : 0));
+		auto w(std::max(_right_node->get_warmup(), _left_node ? _left_node.value()->get_warmup() : 0));
 		this->set_warmup(w);
 	}
 
-	~AssetOpperationNode() {}
-	void build() noexcept override {}
 	std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
 
 private:
-	NullableUniquePtr<AssetLambdaNode> _left_node;
-	NonNullUniquePtr<AssetLambdaReadNode> _right_node;
+	std::optional<UniquePtr<AssetLambdaNode>> _left_node;
+	UniquePtr<AssetLambdaReadNode> _right_node;
 	AgisOperation _opp;
 };
+
+
+//==================================================================================================
+class AssetLambdaLogicalNode : public AssetLambdaNode
+{
+public:
+	using AgisLogicalRightVal = std::variant<double, UniquePtr<AssetLambdaNode>>;
+	AssetLambdaLogicalNode(
+		UniquePtr<AssetLambdaNode> left_node,
+		AgisLogicalOperation _opp,
+		AgisLogicalRightVal right_node_,
+		bool numeric_cast = false
+	) noexcept;
+
+	std::optional<double> evaluate(Asset const* asset) const noexcept override;
+
+private:
+	AgisLogicalOperation _opp;
+	UniquePtr<AssetLambdaNode> _left_node;
+	AgisLogicalRightVal _right_node;
+	bool _numeric_cast = false;
+};
+
 
 
 }

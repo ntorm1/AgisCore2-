@@ -19,16 +19,16 @@ export template <typename T>
 class ExpressionNode : public ASTNode {
 public:
 	virtual ~ExpressionNode() {}
-	virtual T evaluate() const = 0;
+	virtual T evaluate() noexcept = 0;
 };
 
 
 //============================================================================
-export template <typename Result, typename Param>
+export template <typename Result, typename Param = void>
 class OpperationNode : public ASTNode {
 public:
 	virtual ~OpperationNode() {}
-	virtual Result evaluate(Param) const = 0;
+	virtual Result evaluate(Param) const noexcept = 0;
 };
 
 

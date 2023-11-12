@@ -10,6 +10,7 @@ module HydraModule;
 import PortfolioModule;
 import StrategyModule;
 import ExchangeMapModule;
+import ExchangeModule;
 
 namespace Agis
 {
@@ -215,24 +216,28 @@ Hydra::create_portfolio(
 		parent = &_p->master_portfolio;
 	}
 	// find the exchange
-	std::optional<Exchange*> exchange = std::nullopt;
 	if (exchange_id.has_value())
 	{
 		auto exchange_opt = _p->exchanges.get_exchange_mut(exchange_id.value());
 		if (!exchange_opt) return std::unexpected<AgisException>(exchange_opt.error());
-		exchange = exchange_opt.value();
-	}
+		auto exchange = std::move(exchange_opt.value());
+		auto res = parent.value()->add_child_portfolio(
+			portfolio_id,
+			_p->portfolios.size() + 1,
+			exchange,
+			cash
+		);
 
-	auto res = parent.value()->add_child_portfolio(
-		portfolio_id,
-		_p->portfolios.size() + 1,
-		exchange,
-		cash
-	);
-	if (!res) return std::unexpected<AgisException>(res.error());
-	_p->portfolios[portfolio_id] = res.value();
-	return res.value();
+		if (!res) return std::unexpected<AgisException>(res.error());
+		_p->portfolios[portfolio_id] = res.value();
+		return res.value();
+	}
+	else
+	{
+		return std::unexpected<AgisException>(AgisException("Exchange not found"));
+	}
 }
+
 
 //============================================================================
 std::expected<Exchange const*, AgisException>

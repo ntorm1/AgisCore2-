@@ -17,6 +17,7 @@ import <expected>;
 import <shared_mutex>;
 
 import AgisError;
+import ExchangeModule;
 import StrategyTracerModule;
 
 namespace Agis
@@ -42,7 +43,7 @@ private:
 	tbb::task_group&			_task_group;
 	std::optional<Portfolio*>	_parent_portfolio;
 	std::optional<ExchangeMap*>	_exchange_map = std::nullopt;
-	Exchange*					_exchange = nullptr;
+	std::optional<Exchange*>		_exchange = std::nullopt;
 
 	std::vector<Trade*>						_trade_history;
 	std::vector<std::unique_ptr<Position>>	_position_history;
@@ -75,7 +76,7 @@ private:
 	void open_position(Trade* trade) noexcept;
 
 	std::optional<Portfolio*> get_parent_portfolio() const noexcept { return _parent_portfolio;}
-	std::optional<Exchange const*> get_exchange() const noexcept;
+	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }
 	void set_child_portfolio_position_parents(Position* p) noexcept;
 	std::optional<Position*> get_parent_position(size_t asset_index) const noexcept;
 	std::optional<Position*> get_position_mut(size_t asset_index) const noexcept;
