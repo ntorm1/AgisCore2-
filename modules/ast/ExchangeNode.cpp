@@ -86,6 +86,18 @@ ExchangeViewNode::evaluate() noexcept
 	return std::nullopt;
 }
 
+
+//==================================================================================================
+std::expected<ExchangeView, AgisException>
+ExchangeViewSortNode::evaluate() noexcept
+{
+	auto res = _exchange_view_node->evaluate();
+	if (res) return std::unexpected<AgisException>(std::move(res.value()));
+	auto view = _exchange_view_node->copy_view();
+	view.sort(_N, _query_type);
+	return view;
+}
+
 }
 
 }

@@ -13,6 +13,7 @@ import <optional>;
 import <string>;
 import <vector>;
 import <variant>;
+import <expected>;
 
 import BaseNode;
 import AgisError;
@@ -24,7 +25,6 @@ namespace Agis
 
 namespace AST
 {
-
 //==================================================================================================
 export class ExchangeNode : public OpperationNode<Exchange const*>
 {
@@ -48,6 +48,7 @@ private:
 //==================================================================================================
 export class ExchangeViewNode : public ExpressionNode<std::optional<AgisException>>
 {
+	friend class ExchangeViewSortNode;
 public:
 	AGIS_API ExchangeViewNode(
 		SharedPtr<ExchangeNode const> exchange_node,
@@ -56,9 +57,14 @@ public:
 
 	AGIS_API std::optional<AgisException> evaluate() noexcept override;
 
+	size_t get_warmup() const { return _warmup; }
 	ExchangeView const& get_view() const { return _exchange_view; }
+	size_t size() const { return _exchange_view.size(); }
 
 private:
+
+	ExchangeView copy_view() { return _exchange_view; }
+
 	ExchangeView _exchange_view;
 	Exchange const* _exchange;
 	SharedPtr<ExchangeNode const> _exchange_node;
@@ -68,6 +74,31 @@ private:
 	size_t _exchange_offset = 0;
  
 };
+
+
+//==================================================================================================
+export class ExchangeViewSortNode : public ExpressionNode<std::expected<ExchangeView, AgisException>>
+{
+public:
+	ExchangeViewSortNode(
+		UniquePtr<ExchangeViewNode> exchange_view_node,
+		ExchangeQueryType query_type,
+		int n
+	) : _exchange_view_node(std::move(exchange_view_node)), _query_type(query_type)
+	{
+		_N = (n == -1) ? exchange_view_node->size() : static_cast<size_t>(n);
+	}
+
+	AGIS_API std::expected<ExchangeView, AgisException> evaluate() noexcept override;
+	size_t get_warmup() const { return _exchange_view_node->get_warmup(); }
+
+private:
+	UniquePtr<ExchangeViewNode> _exchange_view_node;
+	size_t _N;
+	ExchangeQueryType _query_type;
+};
+
+
 
 
 }

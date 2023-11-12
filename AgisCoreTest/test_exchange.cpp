@@ -40,6 +40,7 @@ class SimpleExchangeTests : public ::testing::Test
 {
 protected:
 	std::shared_ptr<Hydra> hydra;
+	std::unique_ptr<ExchangeViewNode> exchange_view_node;
 	size_t asset_index_1;
 	size_t asset_index_2;
 	size_t asset_index_3;
@@ -55,6 +56,21 @@ protected:
 		asset_index_1 = exchanges.get_asset_index(asset_id_1).value();
 		asset_index_2 = exchanges.get_asset_index(asset_id_2).value();
 		asset_index_3 = exchanges.get_asset_index(asset_id_3).value();
+
+		auto exchange = hydra->get_exchange(exchange_id_1).value();
+		auto exchange_node = std::make_shared<ExchangeNode>(exchange);
+
+		auto previous_price = exchange_node->create_asset_lambda_read_node("CLOSE", -1);
+		auto current_price = exchange_node->create_asset_lambda_read_node("CLOSE", 0);
+		EXPECT_TRUE(previous_price.has_value());
+		EXPECT_TRUE(current_price.has_value());
+
+		auto return_node = std::make_unique<AssetOpperationNode>(
+			std::move(previous_price.value()),
+			std::move(current_price.value()),
+			AgisOperator::DIVIDE
+		);
+		exchange_view_node = std::make_unique<ExchangeViewNode>(exchange_node, std::move(return_node));
 	}
 };
 
@@ -151,32 +167,18 @@ TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {	// create rapid json doc
 
 TEST_F(SimpleExchangeTests, TestExchangeViewNode) {
 	hydra->build();
-	auto exchange = hydra->get_exchange(exchange_id_1).value();
-	auto exchange_node = std::make_shared<ExchangeNode>(exchange);
-
-	auto previous_price = exchange_node->create_asset_lambda_read_node("CLOSE", -1);
-	auto current_price = exchange_node->create_asset_lambda_read_node("CLOSE", 0);
-	EXPECT_TRUE(previous_price.has_value());
-	EXPECT_TRUE(current_price.has_value());
-
-	auto return_node = std::make_unique<AssetOpperationNode>(
-		std::move(previous_price.value()),
-		std::move(current_price.value()),
-		AgisOperator::DIVIDE
-	);
-	auto exchange_view_node = ExchangeViewNode(exchange_node, std::move(return_node));
-	auto res = exchange_view_node.evaluate();
+	auto res = exchange_view_node->evaluate();
 	EXPECT_FALSE(res.has_value()); 
-	auto& view = exchange_view_node.get_view();
+	auto& view = exchange_view_node->get_view();
 	EXPECT_EQ(view.size(), 3);
 	EXPECT_EQ(view.allocation_count(), 0);
 
 	hydra->step();
-	EXPECT_FALSE(exchange_view_node.evaluate().has_value());
+	EXPECT_FALSE(exchange_view_node->evaluate().has_value());
 	EXPECT_EQ(view.allocation_count(), 0);
 
 	hydra->step();
-	EXPECT_FALSE(exchange_view_node.evaluate().has_value());
+	EXPECT_FALSE(exchange_view_node->evaluate().has_value());
 	EXPECT_EQ(view.allocation_count(), 2);
 	EXPECT_FALSE(view.get_allocation(asset_index_1));
 	auto v2 = view.get_allocation(asset_index_2);
@@ -185,6 +187,52 @@ TEST_F(SimpleExchangeTests, TestExchangeViewNode) {
 	double v3_actual = 101.4f / 101.5f;
 	EXPECT_TRUE(abs(v2.value()-v2_actual) < epsilon);
 	EXPECT_TRUE(abs(v3.value()-v3_actual) < epsilon);
+
+	hydra->step();
+	EXPECT_FALSE(exchange_view_node->evaluate().has_value());
+	EXPECT_EQ(view.allocation_count(), 3);
+	auto v1 = view.get_allocation(asset_index_1);
+	v2 = view.get_allocation(asset_index_2);
+	v3 = view.get_allocation(asset_index_3);
+	auto v1_actual = 103.0f / 101.0f;
+	v2_actual = 97.0f / 99.0f;
+	v3_actual = 88.0f / 101.4f;
+	EXPECT_TRUE(abs(v1.value() - v1_actual) < epsilon);
+	EXPECT_TRUE(abs(v2.value() - v2_actual) < epsilon);
+	EXPECT_TRUE(abs(v3.value() - v3_actual) < epsilon);
+}
+
+
+TEST_F(SimpleExchangeTests, TestExchangeViewNodeSort) 
+{
+	auto sort_node = std::make_unique<ExchangeViewSortNode>(
+		std::move(exchange_view_node),
+		ExchangeQueryType::NSmallest,
+		1
+	);
+	hydra->build();
+	hydra->step();
+	hydra->step();
+	auto view_opt = sort_node->evaluate();
+	EXPECT_TRUE(view_opt.has_value());
+	auto& view = view_opt.value();
+	EXPECT_EQ(view.allocation_count(), 1);
+	EXPECT_FALSE(view.search_allocation(asset_index_1));
+	EXPECT_FALSE(view.search_allocation(asset_index_3));
+	auto v2 = view.search_allocation(asset_index_2);
+	double v2_actual = 99.0f / 101.5f;
+	EXPECT_TRUE(abs(v2.value() - v2_actual) < epsilon);
+
+	hydra->step();
+	view_opt = sort_node->evaluate();
+	EXPECT_TRUE(view_opt.has_value());
+	view = view_opt.value();
+	EXPECT_EQ(view.allocation_count(), 1);
+	EXPECT_FALSE(view.search_allocation(asset_index_1));
+	EXPECT_FALSE(view.search_allocation(asset_index_2));
+	auto v3 = view.search_allocation(asset_index_3);
+	auto v3_actual = 88.0f / 101.4f;
+	EXPECT_TRUE(abs(v2.value() - v2_actual) < epsilon);
 
 }
 

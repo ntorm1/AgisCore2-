@@ -13,5 +13,6 @@ namespace Agis
 
 		class ExchangeNode;
 		class ExchangeViewNode;
+		class ExchangeViewSortNode;
 	}
 }
