@@ -25,15 +25,35 @@ namespace Agis
 
 struct HydraPrivate;
 
+export enum class HydraState : uint8_t
+
+{
+	INIT,
+	BUILT,
+	RUN,
+	STOP
+};
+
 export class Hydra
 {
 private:
 	HydraPrivate* _p;
+	HydraState _state = HydraState::INIT;
 	mutable std::shared_mutex _mutex;
 
 public:
 	AGIS_API Hydra();
 	AGIS_API ~Hydra();
+
+	AGIS_API auto __aquire_write_lock() const noexcept
+	{
+		return std::unique_lock<std::shared_mutex>{ _mutex };
+	}
+	
+	AGIS_API [[nodiscard]] HydraState get_state() const noexcept { return _state; }
+	AGIS_API [[nodiscard]] long long get_next_global_time() const noexcept;
+	AGIS_API [[nodiscard]] long long get_global_time() const noexcept;
+
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> run() noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> run_to(long long dt) noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> build() noexcept;

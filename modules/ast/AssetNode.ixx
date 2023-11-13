@@ -110,15 +110,17 @@ public:
 	using AgisLogicalRightVal = std::variant<double, UniquePtr<AssetLambdaNode>>;
 	AssetLambdaLogicalNode(
 		UniquePtr<AssetLambdaNode> left_node,
-		AgisLogicalOperation _opp,
+		AgisLogicalOperator _opp,
 		AgisLogicalRightVal right_node_,
 		bool numeric_cast = false
 	) noexcept;
 
+	bool execute_opperation(double left, double right) const noexcept;
+
 	std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
 private:
-	AgisLogicalOperation _opp;
+	AgisLogicalOperator _opp;
 	UniquePtr<AssetLambdaNode> _left_node;
 	AgisLogicalRightVal _right_node;
 	bool _numeric_cast = false;

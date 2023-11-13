@@ -209,6 +209,18 @@ ExchangeMap::get_global_time() const noexcept
 
 
 //============================================================================
+long long
+ExchangeMap::get_next_time() const noexcept
+{
+	if (_p->current_index >= _p->dt_index.size())
+	{
+		return 0;
+	}
+	return _p->dt_index[_p->current_index];
+}
+
+
+//============================================================================
 std::vector<long long> const&
 ExchangeMap::get_dt_index() const noexcept
 {

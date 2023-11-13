@@ -154,6 +154,16 @@ std::optional<double> Asset::get_asset_feature(size_t column, int index) const n
 
 
 //============================================================================
+std::optional<size_t> Asset::get_streaming_index() const noexcept
+{
+	if(!this->is_streaming() || _p->_current_index == 0)
+	{
+		return std::nullopt;
+	}
+	return _p->_current_index - 1;
+}
+
+//============================================================================
 std::vector<long long> const& Asset::get_dt_index() const noexcept
 {
 	return _p->_dt_index;

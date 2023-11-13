@@ -29,15 +29,6 @@ export enum AgisOperator : uint8_t {
 	DIVIDE
 };
 
-export typedef std::function<bool(double, double)> AgisLogicalOperation;
-
-
-export inline const AgisLogicalOperation agis_greater_than = [](double a, double b) { return a > b; };
-export inline const AgisLogicalOperation agis_less_than = [](double a, double b) { return a < b; };
-export inline const AgisLogicalOperation agis_greater_than_or_equal = [](double a, double b) { return a >= b; };
-export inline const AgisLogicalOperation agis_less_than_or_equal = [](double a, double b) { return a <= b; };
-export inline const AgisLogicalOperation agis_equal = [](double a, double b) { return a == b; };
-export inline const AgisLogicalOperation agis_not_equal = [](double a, double b) { return a != b; };
 }
 
 }

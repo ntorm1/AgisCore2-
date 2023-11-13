@@ -1,5 +1,11 @@
 module;
 
+#ifdef AGISCORE_EXPORTS
+#define AGIS_API __declspec(dllexport)
+#else
+#define AGIS_API __declspec(dllimport)
+#endif
+
 #include <iomanip>
 
 export module AgisTimeUtils;
@@ -33,7 +39,7 @@ namespace Agis
 		return std::chrono::duration_cast<std::chrono::nanoseconds>(timePoint.time_since_epoch()).count();
 	}
 
-    export std::expected<std::string, AgisException>
+    export AGIS_API std::expected<std::string, AgisException>
     epoch_to_str(
         long long epochTime,
         const std::string& formatString)

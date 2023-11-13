@@ -1,5 +1,5 @@
 module;
-
+#include <cmath>
 #include "AgisDeclare.h"
 
 module AssetNode;
@@ -72,7 +72,7 @@ AssetOpperationNode::evaluate(Asset const* asset) const noexcept
 //============================================================================
 AssetLambdaLogicalNode::AssetLambdaLogicalNode(
 	UniquePtr<AssetLambdaNode> left_node,
-	AgisLogicalOperation _opp,
+	AgisLogicalOperator _opp,
 	AgisLogicalRightVal right_node_,
 	bool numeric_cast
 ) noexcept :	AssetLambdaNode(AssetLambdaType::LOGICAL),
@@ -91,6 +91,26 @@ AssetLambdaLogicalNode::AssetLambdaLogicalNode(
 
 
 //============================================================================
+bool
+AssetLambdaLogicalNode::execute_opperation(double left, double right) const noexcept
+{
+	switch (_opp) {
+		case AgisLogicalOperator::GREATER_THAN:
+			return left > right;
+		case AgisLogicalOperator::GREATER_THAN_OR_EQUAL:
+			return left >= right;
+		case AgisLogicalOperator::LESS_THAN:
+			return left < right;
+		case AgisLogicalOperator::LESS_THAN_OR_EQUAL:
+			return left <= right;
+		case AgisLogicalOperator::EQUAL:
+			return left == right;
+		case AgisLogicalOperator::NOT_EQUAL:
+			return left != right;
+	}
+}
+
+//============================================================================
 std::optional<double>
 AssetLambdaLogicalNode::evaluate(Asset const* asset) const noexcept
 {
@@ -104,14 +124,14 @@ AssetLambdaLogicalNode::evaluate(Asset const* asset) const noexcept
 	// that is either a scaler double or another asset lambda node
 	if (std::holds_alternative<double>(_right_node)) {
 		auto right_val_double = std::get<double>(_right_node);
-		res_bool = _opp(res.value(), right_val_double);
+		res_bool = execute_opperation(res.value(), right_val_double);
 		if (!res_bool && !_numeric_cast) res = AGIS_NAN;
 	}
 	else {
 		auto& right_val_node = std::get<UniquePtr<AssetLambdaNode>>(_right_node);
 		auto right_res = right_val_node->evaluate(asset);
 		if (!right_res.has_value() || std::isnan(res.value())) return right_res;
-		res_bool = _opp(res.value(), right_res.value());
+		res_bool = execute_opperation(res.value(), right_res.value());
 		if (!res_bool && !_numeric_cast) res = AGIS_NAN;
 	}
 

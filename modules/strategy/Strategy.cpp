@@ -91,12 +91,13 @@ Strategy::set_allocation(
 	bool clear_missing) noexcept
 {
 	auto view = exchange_view.get_view();
+	double nlv = this->get_nlv();
 	for (auto& allocation_opt : view)
 	{
 		if(!allocation_opt) continue;
 		auto& allocation = allocation_opt.value();
 		AGIS_OPTIONAL_MOVE(market_price, _exchange.get_market_price(allocation.asset_index));
-		double size = allocation.amount / market_price;
+		double size = (nlv * allocation.amount) / market_price;
 
 		// check min size 
 		if(abs(size) < ORDER_EPSILON) continue;

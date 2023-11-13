@@ -52,22 +52,39 @@ Hydra::~Hydra()
 
 
 //============================================================================
+long long
+Hydra::get_next_global_time() const noexcept
+{
+	return _p->exchanges.get_next_time();
+}
+
+//============================================================================
+long long
+Hydra::get_global_time() const noexcept
+{
+	return _p->exchanges.get_global_time();
+}
+
+
+//============================================================================
 std::expected<bool, AgisException> 
 Hydra::run() noexcept
 {
 	// build and reset all members as needed 
-	auto lock = std::unique_lock(_mutex);
 	if(!_p->built)
 	{
 		AGIS_ASSIGN_OR_RETURN(res, build());
 	}
 	if (_p->current_index == 0) this->reset();
 
+	// lock the mutex
+	_mutex.lock();
 	auto index = _p->exchanges.get_dt_index();
 	for (size_t i = _p->current_index; i < index.size(); ++i)
 	{
 		AGIS_ASSIGN_OR_RETURN(res, step());
 	}
+	_mutex.unlock();
 	return true;
 }
 
@@ -91,14 +108,21 @@ Hydra::run_to(long long dt) noexcept
 std::expected<bool, AgisException>
 Hydra::build() noexcept
 {
+	auto lock = std::unique_lock(_mutex);
 	AGIS_ASSIGN_OR_RETURN(res, _p->exchanges.build());
 	_p->built = true;
+	_state = HydraState::BUILT;
 	return true;
 }
 
 std::expected<bool, AgisException>
 Hydra::step() noexcept
 {
+	if (_p->current_index == _p->exchanges.get_dt_index().size())
+	{
+		return std::unexpected<AgisException>(AgisException("End of data"));
+	}
+
 	// step assets and exchanges forward in time
 	_p->exchanges.step();
 
@@ -116,6 +140,7 @@ Hydra::step() noexcept
 	_p->master_portfolio.evaluate(true, false);
 
 	_p->current_index++;
+	_state = HydraState::RUN;
 	return true;
 }
 
@@ -124,6 +149,7 @@ Hydra::step() noexcept
 std::expected<bool, AgisException>
 Hydra::reset() noexcept
 {
+	auto lock = std::unique_lock(_mutex);
 	_p->exchanges.reset();
 	_p->master_portfolio.reset();
 	_p->current_index = 0;

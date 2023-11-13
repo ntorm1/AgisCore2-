@@ -22,6 +22,9 @@ import <string>;
 
 import AgisError;
 
+//using JsonAllocator = rapidjson::Document::AllocatorType;
+// using JsonDocument = rapidjson::Document;
+
 namespace Agis
 {
 
