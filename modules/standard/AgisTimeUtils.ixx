@@ -7,12 +7,13 @@ module;
 #endif
 
 #include <iomanip>
+#include <chrono>
+
 
 export module AgisTimeUtils;
 
 import <string>;
 import <expected>;
-import <chrono>;
 import <sstream>;
 
 import AgisError;

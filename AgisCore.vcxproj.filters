@@ -140,12 +140,6 @@
     <ClCompile Include="modules\ast\ExchangeNode.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="modules\exchange\ExchangeView.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="modules\exchange\ExchangeView.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="modules\ast\ExchangeNode.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

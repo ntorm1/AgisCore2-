@@ -3,6 +3,7 @@ module;
 #include "AgisDeclare.h"
 #include "AgisMacros.h"
 #include "AgisAST.h"
+#include <Eigen/Dense>
 
 module ExchangeNode;
 
@@ -23,10 +24,10 @@ ExchangeViewNode::ExchangeViewNode(
 	UniquePtr<AssetLambdaNode> _assetLambdaNode):
 	_exchange_node(exchange_node),
 	_asset_lambda(std::move(_assetLambdaNode)),
-	_exchange_view(exchange_node->evaluate()),
 	_exchange(exchange_node->evaluate())
 {
 	auto& assets = _exchange->get_assets();
+	_exchange_view.resize(assets.size());
 	for (auto& asset : assets)
 	{
 		_assets.push_back(asset.get());
@@ -66,35 +67,100 @@ ExchangeViewNode::evaluate() noexcept
 			asset->get_current_index() < _warmup
 			)
 		{
-			_exchange_view.remove_allocation(view_index);
-			view_index++;
-			continue;
+			_exchange_view[view_index] = 0.0f;
 		}
 		// execute asset lambda on the given asset
 		auto res = _asset_lambda->evaluate(asset);
 		if(!res) return AgisException("Unexpected failure to execute Asset Lambda Node");
-		
 		// disable asset if nan
-		if (std::isnan(res.value())) {
-			_exchange_view.remove_allocation(view_index);
-			view_index++;
-			continue;
+		if (std::isnan(res.value())) 
+		{
+			_exchange_view[view_index] = 0.0f;
 		}
-		_exchange_view.set_allocation(view_index, res.value());
+		else 
+		{
+			_exchange_view[view_index] = res.value_or(0.0f);
+		}
 		view_index++;
 	}
 	return std::nullopt;
 }
 
+/*
+//============================================================================
+void
+ExchangeViewSortNode::set_weights(ExchangeViewOpp opp) noexcept
+{
+	switch (opp)
+	{
+	case ExchangeViewOpp::UNIFORM:
+		uniform_weights();
+		break;
+	}
+}
+
+//============================================================================
+void ExchangeViewSortNode::uniform_weights()
+{
+	auto weight = 1.0f / static_cast<double>(_allocation_count);
+	for (auto& pair : _view) {
+		if (!pair) continue;
+		pair->amount = weight;
+	}
+}
+*/
+
 
 //==================================================================================================
-std::expected<ExchangeView, AgisException>
+void
+ExchangeViewSortNode::sort(Eigen::VectorXd& _view, size_t N, ExchangeQueryType sort_type) {
+	if (_view.size() <= N) {
+		return;
+	}
+
+	switch (sort_type) {
+	case ExchangeQueryType::Default:
+		_view.conservativeResize(N);  // Resize the vector to keep only the first N elements
+		return;
+	case ExchangeQueryType::NSmallest:
+		std::partial_sort(_view.data(), _view.data() + N, _view.data() + _view.size(),
+			[](const auto& a, const auto& b) {
+				return a < b;
+			});
+		_view.conservativeResize(N);
+		return;
+	case ExchangeQueryType::NLargest:
+		std::partial_sort(_view.data(), _view.data() + N, _view.data() + _view.size(),
+			[](const auto& a, const auto& b) {
+				return a > b;
+			});
+		_view.conservativeResize(N);
+		return;
+	case ExchangeQueryType::NExtreme: {
+		auto n = N / 2;
+		std::partial_sort(_view.data(), _view.data() + n, _view.data() + _view.size(),
+			[](const auto& a, const auto& b) {
+				return a > b;
+			});
+		std::partial_sort(_view.data() + n, _view.data() + N, _view.data() + _view.size(),
+			[](const auto& a, const auto& b) {
+				return a < b;
+			});
+		_view.conservativeResize(N);  // Resize the vector to keep only the first N elements
+		return;
+	}
+	}
+}
+
+
+//==================================================================================================
+std::expected<Eigen::VectorXd, AgisException>
 ExchangeViewSortNode::evaluate() noexcept
 {
-	auto res = _exchange_view_node->evaluate();
-	if (res) return std::unexpected<AgisException>(std::move(res.value()));
-	auto view = _exchange_view_node->copy_view();
-	view.sort(_N, _query_type);
+	auto error_opt = _exchange_view_node->evaluate();
+	if (error_opt) return std::unexpected<AgisException>(error_opt.value());
+	Eigen::VectorXd view = _exchange_view_node->get_view();
+	this->sort(view, _N, _query_type);
 	return view;
 }
 

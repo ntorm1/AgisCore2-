@@ -5,7 +5,7 @@ module;
 #else
 #define AGIS_API __declspec(dllimport)
 #endif
-
+#include <Eigen/Dense>
 #include "AgisDeclare.h"
 
 export module StrategyModule;
@@ -54,7 +54,7 @@ protected:
 	);
 
 	[[nodiscard]] std::expected<bool,AgisException> set_allocation(
-		ExchangeView& exchange_view,
+		Eigen::VectorXd& exchange_view,
 		double epsilon,
 		bool clear_missing = true
 	) noexcept;

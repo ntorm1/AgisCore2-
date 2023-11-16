@@ -3,6 +3,7 @@ module;
 #include "AgisDeclare.h"
 #include "AgisMacros.h"
 
+#include <Eigen/Dense>
 #include <ankerl/unordered_dense.h>
 
 module StrategyModule;
@@ -12,7 +13,6 @@ import <string>;
 import TradeModule;
 import OrderModule;
 import ExchangeModule;
-import ExchangeViewModule;
 import PortfolioModule;
 import StrategyTracerModule;
 
@@ -86,23 +86,24 @@ Strategy::place_market_order(size_t asset_index, double units)
 //============================================================================
 std::expected<bool, AgisException>
 Strategy::set_allocation(
-	ExchangeView& exchange_view,
+	Eigen::VectorXd& allocations,
 	double epsilon,
 	bool clear_missing) noexcept
 {
-	auto view = exchange_view.get_view();
 	double nlv = this->get_nlv();
-	for (auto& allocation_opt : view)
+	size_t i = 0;
+	size_t exchange_offset = _exchange.get_index_offset();
+	for (auto& allocation : allocations)
 	{
-		if(!allocation_opt) continue;
-		auto& allocation = allocation_opt.value();
-		AGIS_OPTIONAL_MOVE(market_price, _exchange.get_market_price(allocation.asset_index));
-		double size = (nlv * allocation.amount) / market_price;
+		size_t asset_index = i + exchange_offset;
+		if(!allocation) continue;
+		AGIS_OPTIONAL_MOVE(market_price, _exchange.get_market_price(asset_index));
+		double size = (nlv * allocation) / market_price;
 
 		// check min size 
 		if(abs(size) < ORDER_EPSILON) continue;
 
-		auto trade_opt = this->get_trade_mut(allocation.asset_index);
+		auto trade_opt = this->get_trade_mut(asset_index);
 		if (trade_opt)
 		{
 			auto& trade = trade_opt.value();
@@ -120,7 +121,7 @@ Strategy::set_allocation(
 				if (size * exsisting_units < 0 && abs(size) < abs(exsisting_units)) continue;
 			}
 		}
-		this->place_market_order(allocation.asset_index, size);
+		this->place_market_order(asset_index, size);
 	}
 
 	// if clear missing is true, then clear any trades that are not in the exchange view

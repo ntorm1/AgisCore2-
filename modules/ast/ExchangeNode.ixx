@@ -5,6 +5,7 @@ module;
 #else
 #define AGIS_API __declspec(dllimport)
 #endif
+#include <Eigen/Dense>
 #include "AgisDeclare.h"
 #include "AgisAST.h"
 export module ExchangeNode;
@@ -17,7 +18,7 @@ import <expected>;
 
 import BaseNode;
 import AgisError;
-import ExchangeViewModule;
+
 
 namespace Agis
 {
@@ -58,14 +59,11 @@ public:
 	AGIS_API std::optional<AgisException> evaluate() noexcept override;
 
 	size_t get_warmup() const { return _warmup; }
-	ExchangeView const& get_view() const { return _exchange_view; }
+	Eigen::VectorXd const& get_view() const { return _exchange_view; }
 	size_t size() const { return _exchange_view.size(); }
 
 private:
-
-	ExchangeView copy_view() { return _exchange_view; }
-
-	ExchangeView _exchange_view;
+	Eigen::VectorXd _exchange_view;
 	Exchange const* _exchange;
 	SharedPtr<ExchangeNode const> _exchange_node;
 	UniquePtr<AssetLambdaNode> _asset_lambda;
@@ -76,8 +74,23 @@ private:
 };
 
 
+export enum class ExchangeQueryType : uint8_t
+{
+	Default,	/// return all assets in view
+	NLargest,	/// return the N largest
+	NSmallest,	/// return the N smallest
+	NExtreme	/// return the N/2 smallest and largest
+};
+
+enum class ExchangeViewOpp
+{
+	UNIFORM,			/// applies 1/N weight to each pair
+};
+
+
+
 //==================================================================================================
-export class ExchangeViewSortNode : public ExpressionNode<std::expected<ExchangeView, AgisException>>
+export class ExchangeViewSortNode : public ExpressionNode<std::expected<Eigen::VectorXd, AgisException>>
 {
 public:
 	ExchangeViewSortNode(
@@ -89,10 +102,13 @@ public:
 		_N = (n == -1) ? exchange_view_node->size() : static_cast<size_t>(n);
 	}
 
-	AGIS_API std::expected<ExchangeView, AgisException> evaluate() noexcept override;
+	AGIS_API std::expected<Eigen::VectorXd, AgisException> evaluate() noexcept override;
 	size_t get_warmup() const { return _exchange_view_node->get_warmup(); }
 
 private:
+	//void uniform_weights();
+	void sort(Eigen::VectorXd& _view, size_t count, ExchangeQueryType type);
+
 	UniquePtr<ExchangeViewNode> _exchange_view_node;
 	size_t _N;
 	ExchangeQueryType _query_type;
