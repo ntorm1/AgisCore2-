@@ -48,7 +48,7 @@ public:
     void set(Tracer o) { value_.set(o); }
     void reset(Tracer o) { value_.reset(o); }
 
-    [[nodiscard]] std::expected<bool, AgisException> evaluate();
+    [[nodiscard]] std::expected<bool, AgisException> evaluate(bool is_reprice);
     void zero_out_tracers();
     void reset();
 

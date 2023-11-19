@@ -39,11 +39,7 @@ StrategyNode::evaluate() noexcept
 	Eigen::VectorXd& weights = *weights_ptr;
 
 	weights -= current_weights;
-	for (auto i = 0; i < weights.size(); ++i)
-	{
-		if (abs(weights[i]) < _epsilon)
-			weights[i] = 0.0;
-	}
+	weights = (weights.array().abs() < _epsilon).select(0.0, weights);
 	return _strategy.set_allocation(weights);
 }
 

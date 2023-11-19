@@ -2,10 +2,13 @@
 
 import HydraModule;
 import ExchangeMapModule;
+
 import PortfolioModule;
+import PositionModule;
+import TradeModule;
+
 import AgisStrategyTree;
 import StrategyModule;
-import SerializeModule;
 
 using namespace Agis;
 
@@ -119,10 +122,38 @@ TEST_F(SimpleASTTests, ExchangeView) {
 		std::move(alloc_node)
 	);
 	auto res_strat = hydra->register_strategy(std::move(strategy));
+	auto s = hydra->get_strategy(strategy_id_1).value();
 	hydra->build();
 	hydra->step();
 	EXPECT_DOUBLE_EQ(portfolio1->get_cash(), cash1);
+	//=======================================================
 	hydra->step();
 	EXPECT_DOUBLE_EQ(portfolio1->get_cash(), 0.0f);
+	auto trade_opt = s->get_trade(asset_index_2);
+	auto pos_opt = portfolio1->get_position(asset_id_2);
+	EXPECT_TRUE(pos_opt.has_value());
+	EXPECT_TRUE(trade_opt.has_value());
+	auto p1 = 99.0f;
+	auto units = cash1 / p1;
+	EXPECT_DOUBLE_EQ(pos_opt.value()->get_units(), units);
+	EXPECT_DOUBLE_EQ(trade_opt.value()->get_units(), units);
+	//=======================================================
+	hydra->step();
+	trade_opt = s->get_trade(asset_index_2);
+	pos_opt = portfolio1->get_position(asset_id_2);
+	EXPECT_FALSE(pos_opt.has_value());
+	EXPECT_FALSE(trade_opt.has_value());
+	auto p2 = 97.0f;
+	auto adjustment = units * (p2-p1);
+	EXPECT_DOUBLE_EQ(portfolio1->get_nlv(), cash1 + adjustment);
+	EXPECT_DOUBLE_EQ(s->get_nlv(), cash1 + adjustment);
+	trade_opt = s->get_trade(asset_index_3);
+	pos_opt = portfolio1->get_position(asset_id_3);
+	EXPECT_TRUE(trade_opt.has_value());
+	EXPECT_TRUE(pos_opt.has_value());
+	auto asset3_p2 = 88.0f;
+	units = (cash1 + adjustment) / asset3_p2;
+	EXPECT_DOUBLE_EQ(trade_opt.value()->get_units(), units);
+	EXPECT_DOUBLE_EQ(pos_opt.value()->get_units(), units);
 
 }

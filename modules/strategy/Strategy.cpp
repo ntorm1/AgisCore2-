@@ -167,11 +167,25 @@ Strategy::set_allocation(Eigen::VectorXd& nlvs)
 	for (auto allocation : nlvs)
 	{
 		size_t asset_index = i + exchange_offset;
-		if (!allocation) continue;
+		if (!allocation) 
+		{
+			i++;
+			continue;
+		};
+#ifdef _DEBUG
 		AGIS_OPTIONAL_MOVE(market_price, _exchange.get_market_price(asset_index));
+#else
+		auto market_price = *_exchange.get_market_price(asset_index);
+#endif
 		double size = (nlv * allocation) / market_price;
-		if (abs(size) < ORDER_EPSILON) continue;
+		if (abs(size) < ORDER_EPSILON) 
+		{
+			i++;
+			continue;
+		};
 		this->place_market_order(asset_index, size);
+		i++;
+
 	}
 	return true;
 }

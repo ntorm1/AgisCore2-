@@ -59,6 +59,7 @@ public:
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> build() noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> step() noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> reset() noexcept;
+	AGIS_API [[nodiscard]] std::optional<Strategy const*> get_strategy(std::string const& strategy_id) const noexcept;
 	AGIS_API [[nodiscard]] std::optional<Strategy*> get_strategy_mut(std::string const& strategy_id) const noexcept;
 	AGIS_API [[nodiscard]] std::optional<Portfolio const*> get_portfolio(std::string const& portfolio_id) const noexcept;
 	AGIS_API [[nodiscard]] ExchangeMap const& get_exchanges() const noexcept;

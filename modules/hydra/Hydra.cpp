@@ -158,6 +158,14 @@ Hydra::reset() noexcept
 
 
 //============================================================================
+std::optional<Strategy const*>
+Hydra::get_strategy(std::string const& strategy_id) const noexcept
+{
+	return get_strategy_mut(strategy_id);
+}
+
+
+//============================================================================
 std::optional<Strategy*>
 Hydra::get_strategy_mut(std::string const& strategy_id) const noexcept
 {

@@ -151,9 +151,7 @@ Portfolio::evaluate(bool on_close, bool is_reprice)
 		auto portfolio = *(order->get_parent_portfolio_mut());
 		portfolio->process_order(std::move(order));
 	}
-
-	if (is_reprice) return true;
-	return _tracers.evaluate();
+	return _tracers.evaluate(is_reprice);
 }
 
 

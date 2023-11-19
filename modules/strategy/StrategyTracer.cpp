@@ -125,29 +125,37 @@ void StrategyTracers::unrealized_pnl_add_assign(double v) noexcept
 
 
 //============================================================================
-std::expected<bool, AgisException> StrategyTracers::evaluate()
+std::expected<bool, AgisException> StrategyTracers::evaluate(bool is_reprice)
 {
-	// Note: at this point all trades have been evaluated and the cash balance has been updated
-	// so we only have to observer the values or use them to calculate other values.
-	if (this->has(Tracer::NLV)) this->nlv_history.push_back(
-		this->nlv.load()
-	);
-	if (this->has(Tracer::CASH)) this->cash_history.push_back(this->cash.load());
+	// at this point weights vector contains the nlv of each trade. To get the strategy 
+	// portfolio weights we need to divide by the nlv of the evaluated strategy.
+	if(strategy && is_reprice)
+	{
+		_weights /= this->nlv.load();
+	}
+
+	if (!is_reprice) 
+	{
+		// Note: at this point all trades have been evaluated and the cash balance has been updated
+		// so we only have to observer the values or use them to calculate other values.
+		if (this->has(Tracer::NLV)) this->nlv_history.push_back(
+			this->nlv.load()
+		);
+		if (this->has(Tracer::CASH)) this->cash_history.push_back(this->cash.load());
+	}
 
 	if (portfolio)
 	{
 		for(auto& [k, v] : portfolio->_child_portfolios)
 		{
-			AGIS_ASSIGN_OR_RETURN(res, v->_tracers.evaluate());
+			AGIS_ASSIGN_OR_RETURN(res, v->_tracers.evaluate(is_reprice));
 		}
 		for (auto& [k, v] : portfolio->_strategies)
 		{
-			AGIS_ASSIGN_OR_RETURN(res, v->_tracers.evaluate());
+			AGIS_ASSIGN_OR_RETURN(res, v->_tracers.evaluate(is_reprice));
 		}
 	}
-	else {
-		_weights /= this->nlv.load();
-	}
+
 
 	return true;
 }

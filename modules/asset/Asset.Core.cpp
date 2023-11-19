@@ -118,10 +118,12 @@ size_t Asset::columns() const noexcept
 std::optional<double>
 Asset::get_market_price(bool is_close) const noexcept
 {
+#ifdef _DEBUG
 	if (_state != AssetState::STREAMING && _state != AssetState::LAST)
 	{
 		return std::nullopt;
 	}
+#endif
 	if (is_close)
 	{
 		return *(_p->_data_ptr + _p->_close_index - _p->_cols);
