@@ -55,7 +55,7 @@ private:
 		std::string dt_format,
 		std::string source
 	);
-
+	std::vector<Asset*> const& get_assets() const noexcept;
 	std::expected<bool, AgisException> force_place_order(Order* order, bool is_close) noexcept;
 	AGIS_API [[nodiscard]] std::expected<Exchange*, AgisException> get_exchange_mut(std::string const& id) const noexcept;
 

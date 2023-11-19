@@ -75,6 +75,7 @@ private:
 	void open_position(Order const* order) noexcept;
 	void open_position(Trade* trade) noexcept;
 
+	size_t get_asset_count_limit() const noexcept;
 	std::optional<Portfolio*> get_parent_portfolio() const noexcept { return _parent_portfolio;}
 	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }
 	void set_child_portfolio_position_parents(Position* p) noexcept;

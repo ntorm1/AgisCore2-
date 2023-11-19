@@ -1,14 +1,12 @@
 module;
-
 #pragma once
 #ifdef AGISCORE_EXPORTS
 #define AGIS_API __declspec(dllexport)
 #else
 #define AGIS_API __declspec(dllimport)
 #endif
-
 #include "AgisDeclare.h"
-
+#include <Eigen/Dense>
 export module StrategyTracerModule;
 
 import <vector>;
@@ -32,11 +30,11 @@ export enum Tracer : size_t {
 export class StrategyTracers {
     friend class Strategy;
     friend class Portfolio;
+    friend class Trade;
 public:
 
 
-    StrategyTracers(Strategy* strategy_, double cash);
-
+    StrategyTracers(Strategy* strategy_, double cash, size_t asset_count);
     StrategyTracers(Portfolio* portfolio, double cash);
 
     StrategyTracers(Strategy* strategy_, std::initializer_list<Tracer> opts) {
@@ -68,10 +66,12 @@ protected:
     std::atomic<double> cash = 0;
     std::atomic<double> starting_cash = 0;
 private:
+    inline void zero_allocation(size_t i) noexcept { _weights[i] = 0; }
+    inline void allocation_add_assign(size_t i, double v) noexcept { _weights[i] += v; }
     Strategy* strategy = nullptr;
     Portfolio* portfolio = nullptr;
+    Eigen::VectorXd _weights;
     std::bitset<MAX> value_{ 0 };
-
     std::vector<double> beta_history;
 
 };

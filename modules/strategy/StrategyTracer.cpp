@@ -2,7 +2,7 @@ module;
 
 #include "AgisDeclare.h"
 #include "AgisMacros.h"
-
+#include <Eigen/Dense>
 module StrategyTracerModule;
 
 import PortfolioModule;
@@ -15,7 +15,7 @@ namespace Agis
 {
 
 //============================================================================
-StrategyTracers::StrategyTracers(Strategy* strategy_, double cash)
+StrategyTracers::StrategyTracers(Strategy* strategy_, double cash, size_t asset_count)
 {
 	this->strategy = strategy_;
 	this->starting_cash.store(cash);
@@ -23,6 +23,8 @@ StrategyTracers::StrategyTracers(Strategy* strategy_, double cash)
 	this->nlv.store(cash);
 	this->set(Tracer::CASH);
 	this->set(Tracer::NLV);
+	_weights.resize(asset_count);
+	_weights.setZero();
 };
 
 
@@ -142,6 +144,9 @@ std::expected<bool, AgisException> StrategyTracers::evaluate()
 			AGIS_ASSIGN_OR_RETURN(res, v->_tracers.evaluate());
 		}
 	}
+	else {
+		_weights /= this->nlv.load();
+	}
 
 	return true;
 }
@@ -149,8 +154,9 @@ std::expected<bool, AgisException> StrategyTracers::evaluate()
 //============================================================================
 void StrategyTracers::zero_out_tracers()
 {
-	this->nlv.store(this->cash.load());
-	this->unrealized_pnl.store(0.0);
+	nlv.store(cash.load());
+	_weights.setZero();
+	unrealized_pnl.store(0.0);
 
 }
 

@@ -325,11 +325,11 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 			);
 		}
 	}
-	
+	auto asset_index = order->get_asset_index();
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
-	auto it = _positions.find(order->get_asset_index());
+	auto it = _positions.find(asset_index);
 	auto extracted_position = std::move(it->second);
-	_positions.erase(order->get_asset_index());
+	_positions.erase(asset_index);
 	_position_history.push_back(std::move(extracted_position));
 }
 
@@ -434,6 +434,17 @@ Portfolio::open_position(Trade* trade) noexcept
 	{
 		_parent_portfolio.value()->open_position(trade);
 	}
+}
+
+
+//============================================================================
+size_t
+Portfolio::get_asset_count_limit() const noexcept
+{
+	if (_exchange)
+		return _exchange.value()->get_assets().size();
+	else
+		return _exchange_map.value()->get_assets().size();
 }
 
 

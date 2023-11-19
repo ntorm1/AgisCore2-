@@ -79,6 +79,14 @@ ExchangeMap::create_exchange(std::string exchange_id, std::string dt_format, std
 
 
 //============================================================================
+std::vector<Asset*> const&
+ExchangeMap::get_assets() const noexcept
+{
+	return _p->assets;
+}
+
+
+//============================================================================
 ExchangeMap::ExchangeMap()
 {
 	_p = new ExchangeMapPrivate();

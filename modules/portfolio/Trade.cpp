@@ -88,7 +88,10 @@ void Trade::adjust(Order const* filled_order)
 	{
 		this->reduce(filled_order);
 	}
-	_nlv = _units * filled_order->get_fill_price();
+	auto nlv_new = _units * filled_order->get_fill_price();
+	auto adjustment = nlv_new - _nlv;
+	_strategy->_tracers.allocation_add_assign(_asset_index, adjustment);
+	_nlv = nlv_new;
 }
 
 
@@ -106,6 +109,7 @@ Trade::evaluate(double market_price, bool on_close, bool is_reprice)
 	// adjust strategy levels 
 	_strategy->_tracers.nlv_add_assign(nlv_new);
 	_strategy->_tracers.unrealized_pnl_add_assign(unrealized_pl_new - _unrealized_pnl);
+	_strategy->_tracers.allocation_add_assign(_asset_index, nlv_new);
 	_portfolio->_tracers.nlv_add_assign(nlv_new);
 	_portfolio->_tracers.unrealized_pnl_add_assign(unrealized_pl_new - _unrealized_pnl);
 	

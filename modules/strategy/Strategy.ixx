@@ -43,6 +43,7 @@ private:
 
 	bool has_exception() const noexcept { return _exception.has_value(); }
 	void set_exception(AgisException&& exception) noexcept { _exception = exception; }
+	size_t get_asset_count_limit() const noexcept;
 	Portfolio* get_portfolio_mut() const noexcept;
 
 protected:

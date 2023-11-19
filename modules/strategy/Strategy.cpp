@@ -33,8 +33,9 @@ public:
 	ankerl::unordered_dense::map<size_t, Trade const*> trades;
 
 	StrategyPrivate(Portfolio& p, size_t index)
-		:  strategy_index(index), portfolio(p)
-	{}
+		: strategy_index(index), portfolio(p)
+	{
+	}
 
 	void place_order(std::unique_ptr<Order> order)
 	{
@@ -49,7 +50,7 @@ Strategy::Strategy(
 	Exchange const& exchange,
 	Portfolio& portfolio
 	): 
-	_exchange(exchange), _tracers(this, cash)
+	_exchange(exchange), _tracers(this, cash, exchange.get_assets().size())
 {
 	_p = new StrategyPrivate(portfolio, _strategy_counter++);
 	_p->portfolio_index = portfolio.get_portfolio_index();
@@ -57,6 +58,12 @@ Strategy::Strategy(
 	_strategy_id = id;
 }
 
+
+//============================================================================
+size_t Strategy::get_asset_count_limit() const noexcept
+{
+	return _exchange.get_assets().size();
+}
 
 //============================================================================
 Portfolio*
@@ -219,6 +226,7 @@ Strategy::add_trade(Trade const* trade)
 void
 Strategy::remove_trade(size_t asset_index)
 {
+	_tracers.zero_allocation(asset_index);
 	_p->trades.erase(asset_index);
 }
 
