@@ -216,8 +216,8 @@ TEST_F(SimpleExchangeTests, TestExchangeViewNodeSort)
 	EXPECT_TRUE(view_opt.has_value());
 	auto& weights = *(view_opt.value());
 	EXPECT_EQ((weights.array() > 0).count(), 1);
-	EXPECT_FALSE(weights[asset_index_1]);
-	EXPECT_FALSE(weights[asset_index_3]);
+	EXPECT_TRUE(std::isnan(weights[asset_index_1]));
+	EXPECT_TRUE(std::isnan(weights[asset_index_3]));
 	auto v2 = weights[asset_index_2];
 	double v2_actual = 99.0f / 101.5f;
 	EXPECT_TRUE(abs(v2 - v2_actual) < epsilon);
@@ -228,8 +228,8 @@ TEST_F(SimpleExchangeTests, TestExchangeViewNodeSort)
 	auto then = std::chrono::system_clock::now();
 	auto diff = std::chrono::duration_cast<std::chrono::microseconds>(then - now);
 	EXPECT_EQ((weights.array() > 0).count(), 1);
-	EXPECT_EQ(weights[asset_index_1], 0.0);
-	EXPECT_EQ(weights[asset_index_2], 0.0);
+	EXPECT_TRUE(std::isnan(weights[asset_index_1]));
+	EXPECT_TRUE(std::isnan(weights[asset_index_2]));
 	auto v3 = weights[asset_index_3];
 	auto v3_actual = 88.0f / 101.4f;
 	EXPECT_TRUE(abs(v2 - v2_actual) < epsilon);

@@ -16,5 +16,8 @@ namespace Agis
 		class ExchangeViewSortNode;
 
 		class AllocationNode;
+
+		class StrategyNode;
+
 	}
 }

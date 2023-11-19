@@ -101,7 +101,7 @@ public:
 
 	AGIS_API std::expected<Eigen::VectorXd*, AgisException>  evaluate() noexcept override;
 	size_t get_warmup() const { return _exchange_view_node->get_warmup(); }
-	size_t view_size() const noexcept { return _exchange_view_node->size(); }
+	size_t view_size() const noexcept { return _view.size(); }
 private:
 	void sort(size_t count, ExchangeQueryType type);
 

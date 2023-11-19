@@ -90,7 +90,6 @@ void Trade::adjust(Order const* filled_order)
 	}
 	auto nlv_new = _units * filled_order->get_fill_price();
 	auto adjustment = nlv_new - _nlv;
-	_strategy->_tracers.allocation_add_assign(_asset_index, adjustment);
 	_nlv = nlv_new;
 }
 

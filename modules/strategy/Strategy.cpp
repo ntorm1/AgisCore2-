@@ -50,7 +50,7 @@ Strategy::Strategy(
 	Exchange const& exchange,
 	Portfolio& portfolio
 	): 
-	_exchange(exchange), _tracers(this, cash, exchange.get_assets().size())
+	_exchange(exchange), _tracers(this, cash, exchange.get_assets().size(), exchange.get_index_offset())
 {
 	_p = new StrategyPrivate(portfolio, _strategy_counter++);
 	_p->portfolio_index = portfolio.get_portfolio_index();
@@ -63,6 +63,14 @@ Strategy::Strategy(
 size_t Strategy::get_asset_count_limit() const noexcept
 {
 	return _exchange.get_assets().size();
+}
+
+
+//============================================================================
+size_t Strategy::get_exchange_offset()
+const noexcept
+{
+	return _exchange.get_index_offset();
 }
 
 //============================================================================
@@ -150,6 +158,26 @@ Strategy::set_allocation(
 
 
 //============================================================================
+std::expected<bool, AgisException>
+Strategy::set_allocation(Eigen::VectorXd& nlvs)
+{
+	size_t exchange_offset = _exchange.get_index_offset();
+	double nlv = this->get_nlv();
+	size_t i = 0;
+	for (auto allocation : nlvs)
+	{
+		size_t asset_index = i + exchange_offset;
+		if (!allocation) continue;
+		AGIS_OPTIONAL_MOVE(market_price, _exchange.get_market_price(asset_index));
+		double size = (nlv * allocation) / market_price;
+		if (abs(size) < ORDER_EPSILON) continue;
+		this->place_market_order(asset_index, size);
+	}
+	return true;
+}
+
+
+//============================================================================
 std::optional<Trade const*>
 Strategy::get_trade(size_t asset_index) const noexcept
 {
@@ -228,6 +256,11 @@ Strategy::remove_trade(size_t asset_index)
 {
 	_tracers.zero_allocation(asset_index);
 	_p->trades.erase(asset_index);
+}
+
+Eigen::VectorXd const& Strategy::get_weights() const noexcept
+{
+	return _tracers.get_weights();
 }
 
 }

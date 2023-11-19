@@ -15,7 +15,7 @@ namespace Agis
 {
 
 //============================================================================
-StrategyTracers::StrategyTracers(Strategy* strategy_, double cash, size_t asset_count)
+StrategyTracers::StrategyTracers(Strategy* strategy_, double cash, size_t asset_count, size_t exchange_offset)
 {
 	this->strategy = strategy_;
 	this->starting_cash.store(cash);
@@ -23,6 +23,7 @@ StrategyTracers::StrategyTracers(Strategy* strategy_, double cash, size_t asset_
 	this->nlv.store(cash);
 	this->set(Tracer::CASH);
 	this->set(Tracer::NLV);
+	_exchange_offset = exchange_offset;
 	_weights.resize(asset_count);
 	_weights.setZero();
 };

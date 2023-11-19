@@ -15,10 +15,11 @@ namespace AST
 {
 
 //==================================================================================================
-AllocationNode::AllocationNode(UniquePtr<ExchangeViewSortNode> weights_node, double epsilon, AllocType alloc_type)
+AllocationNode::AllocationNode(
+	UniquePtr<ExchangeViewSortNode> weights_node,
+	AllocType alloc_type)
 {
 	_weights_node = std::move(weights_node);
-	_epsilon = epsilon;
 	_alloc_type = alloc_type;
 }
 
@@ -30,7 +31,7 @@ AllocationNode::~AllocationNode()
 
 
 //==================================================================================================
-std::expected<Eigen::VectorXd const*, AgisException>
+std::expected<Eigen::VectorXd*, AgisException>
 AllocationNode::evaluate() noexcept
 {
 	auto weights_opt = _weights_node->evaluate();
@@ -46,9 +47,19 @@ AllocationNode::evaluate() noexcept
 void
 AllocationNode::uniform_allocation(Eigen::VectorXd& weights)
 {
+	if (!_weights_node->view_size()) {
+		weights.setZero();
+		return;
+	}
 	auto c = 1.0f / static_cast<double>(_weights_node->view_size());
-	weights.setOnes();
-	weights *= c;
+	for (auto i = 0; i < weights.size(); ++i) {
+		if (std::isnan(weights[i])) {
+			weights[i] = 0.0f;
+		}
+		else {
+			weights[i] = c;
+		}
+	}
 }
 
 

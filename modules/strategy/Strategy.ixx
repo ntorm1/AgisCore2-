@@ -7,6 +7,7 @@ module;
 #endif
 #include <Eigen/Dense>
 #include "AgisDeclare.h"
+#include "AgisAST.h"
 
 export module StrategyModule;
 
@@ -29,7 +30,7 @@ export class Strategy
 	friend class Position;
 	friend class Trade;
 	friend class Hydra;
-
+	friend class AST::StrategyNode;
 private:
 	static std::atomic<size_t> _strategy_counter;
 	std::string _strategy_id;
@@ -40,11 +41,15 @@ private:
 	
 	void add_trade(Trade const* trade);
 	void remove_trade(size_t asset_index);
+	[[nodiscard]] std::expected<bool, AgisException> set_allocation(Eigen::VectorXd& weights);
 
+	Eigen::VectorXd const& get_weights() const noexcept;
 	bool has_exception() const noexcept { return _exception.has_value(); }
 	void set_exception(AgisException&& exception) noexcept { _exception = exception; }
 	size_t get_asset_count_limit() const noexcept;
+	size_t get_exchange_offset() const noexcept;
 	Portfolio* get_portfolio_mut() const noexcept;
+	inline Eigen::VectorXd const& get_weights() { return _tracers._weights; }
 
 protected:
 	AGIS_API Strategy(

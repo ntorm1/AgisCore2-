@@ -161,18 +161,22 @@ Portfolio::evaluate(bool on_close, bool is_reprice)
 std::expected<bool, AgisException>
 Portfolio::step()
 {
-	if (!_step_call) return true;
-	for (auto& strategy_pair : _strategies) {
-		auto strategy = strategy_pair.second.get();
-		_task_group.run([strategy]() {
-			if (strategy->has_exception()) {
-				return;
-			}
-			auto res = strategy->step();
-			if (!res) {
-				strategy->set_exception(std::move(res.error()));
-			}
-		});
+	if (_step_call) {
+		for (auto& strategy_pair : _strategies) {
+			auto strategy = strategy_pair.second.get();
+			_task_group.run([strategy]() {
+				if (strategy->has_exception()) {
+					return;
+				}
+				auto res = strategy->step();
+				if (!res) {
+					strategy->set_exception(std::move(res.error()));
+				}
+				});
+		}
+	}
+	for (auto& [index, child_portfolio] : _child_portfolios) {
+		AGIS_ASSIGN_OR_RETURN(res, child_portfolio->step());
 	}
 	_step_call = false;
 	return true;
@@ -342,9 +346,8 @@ void Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 	if (position->get_trades().size() == 0)
 	{
 		auto it = _positions.find(asset_index);
-		auto extracted_position = std::move(it->second);
+		_position_history.push_back(std::move(it->second));
 		_positions.erase(asset_index);
-		_position_history.push_back(std::move(extracted_position));
 	}
 	while (_parent_portfolio) {
 		_parent_portfolio.value()->close_trade(asset_index, strategy_index);

@@ -34,7 +34,7 @@ export class StrategyTracers {
 public:
 
 
-    StrategyTracers(Strategy* strategy_, double cash, size_t asset_count);
+    StrategyTracers(Strategy* strategy_, double cash, size_t asset_count, size_t exchange_offset);
     StrategyTracers(Portfolio* portfolio, double cash);
 
     StrategyTracers(Strategy* strategy_, std::initializer_list<Tracer> opts) {
@@ -66,10 +66,12 @@ protected:
     std::atomic<double> cash = 0;
     std::atomic<double> starting_cash = 0;
 private:
-    inline void zero_allocation(size_t i) noexcept { _weights[i] = 0; }
-    inline void allocation_add_assign(size_t i, double v) noexcept { _weights[i] += v; }
+    inline Eigen::VectorXd const& get_weights() const noexcept { return _weights; }
+    inline void zero_allocation(size_t i) noexcept { _weights[i- _exchange_offset] = 0; }
+    inline void allocation_add_assign(size_t i, double v) noexcept { _weights[i- _exchange_offset] += v; }
     Strategy* strategy = nullptr;
     Portfolio* portfolio = nullptr;
+    size_t _exchange_offset = 0;
     Eigen::VectorXd _weights;
     std::bitset<MAX> value_{ 0 };
     std::vector<double> beta_history;

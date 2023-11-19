@@ -21,24 +21,24 @@ namespace Agis
 namespace AST
 {
 
-enum class AllocType : uint8_t
+export enum class AllocType : uint8_t
 {
 	UNIFORM
 };
 
+
 export class AllocationNode: 
-		public ExpressionNode<std::expected<Eigen::VectorXd const*, AgisException>>
+		public ExpressionNode<std::expected<Eigen::VectorXd*, AgisException>>
 {
 public:
-	AllocationNode(
+	AGIS_API AllocationNode(
 		UniquePtr<ExchangeViewSortNode> weights_node,
-		double epsilon,
 		AllocType alloc_type
 	);
 	
-	virtual ~AllocationNode();
+	AGIS_API virtual ~AllocationNode();
 
-	std::expected<Eigen::VectorXd const*, AgisException> evaluate() noexcept override;
+	std::expected<Eigen::VectorXd*, AgisException> evaluate() noexcept override;
 
 private:
 	void uniform_allocation(Eigen::VectorXd& weights);
@@ -48,6 +48,8 @@ private:
 	double _epsilon;
 	AllocType _alloc_type;
 };
+
+
 
 
 }

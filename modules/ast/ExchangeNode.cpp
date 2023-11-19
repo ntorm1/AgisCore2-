@@ -153,7 +153,8 @@ ExchangeViewSortNode::evaluate() noexcept
 		_view.push_back(std::make_pair(i, exchange_view[i]));
 	}
 	this->sort(_N, _query_type);
-	_weights.setZero();
+	// fill weights vector with nan, and set actual allocations to the sorted view values
+	_weights.setConstant(std::numeric_limits<double>::quiet_NaN());
 	for (auto& pair : _view) {
 		_weights[pair.first] = pair.second;
 	}
