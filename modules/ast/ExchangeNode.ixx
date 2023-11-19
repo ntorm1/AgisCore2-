@@ -47,7 +47,8 @@ private:
 
 
 //==================================================================================================
-export class ExchangeViewNode : public ExpressionNode<std::optional<AgisException>>
+export class ExchangeViewNode : 
+	public ExpressionNode<std::expected<Eigen::VectorXd const*, AgisException>>
 {
 	friend class ExchangeViewSortNode;
 public:
@@ -56,10 +57,9 @@ public:
 		UniquePtr<AssetLambdaNode> asset_lambda
 	);
 
-	AGIS_API std::optional<AgisException> evaluate() noexcept override;
+	AGIS_API std::expected<Eigen::VectorXd const*, AgisException> evaluate() noexcept override;
 
 	size_t get_warmup() const { return _warmup; }
-	Eigen::VectorXd const& get_view() const { return _exchange_view; }
 	size_t size() const { return _exchange_view.size(); }
 
 private:
@@ -90,7 +90,8 @@ enum class ExchangeViewOpp
 
 
 //==================================================================================================
-export class ExchangeViewSortNode : public ExpressionNode<std::expected<Eigen::VectorXd, AgisException>>
+export class ExchangeViewSortNode : 
+	public ExpressionNode<std::expected<Eigen::VectorXd*,AgisException>>
 {
 public:
 	ExchangeViewSortNode(
@@ -99,16 +100,19 @@ public:
 		int n
 	) : _exchange_view_node(std::move(exchange_view_node)), _query_type(query_type)
 	{
+		_weights.resize(_exchange_view_node->size());
+		_weights.setZero();
 		_N = (n == -1) ? exchange_view_node->size() : static_cast<size_t>(n);
 	}
 
-	AGIS_API std::expected<Eigen::VectorXd, AgisException> evaluate() noexcept override;
+	AGIS_API std::expected<Eigen::VectorXd*, AgisException>  evaluate() noexcept override;
 	size_t get_warmup() const { return _exchange_view_node->get_warmup(); }
 
 private:
 	//void uniform_weights();
-	void sort(Eigen::VectorXd& _view, size_t count, ExchangeQueryType type);
-
+	void sort(size_t count, ExchangeQueryType type);
+	std::vector<std::pair<size_t, double>> _view;
+	Eigen::VectorXd _weights;
 	UniquePtr<ExchangeViewNode> _exchange_view_node;
 	size_t _N;
 	ExchangeQueryType _query_type;

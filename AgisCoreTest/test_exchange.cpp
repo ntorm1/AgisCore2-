@@ -2,6 +2,7 @@
 
 #include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
+#include <Eigen/Dense>
 
 import HydraModule;
 import ExchangeMapModule;
@@ -168,38 +169,36 @@ TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {	// create rapid json doc
 TEST_F(SimpleExchangeTests, TestExchangeViewNode) {
 	hydra->build();
 	auto res = exchange_view_node->evaluate();
-	EXPECT_FALSE(res.has_value()); 
-	auto& view = exchange_view_node->get_view();
+	EXPECT_TRUE(res.has_value()); 
+	auto& view = *(res.value());
 	EXPECT_EQ(view.size(), 3);
-	EXPECT_EQ(view.allocation_count(), 0);
 
 	hydra->step();
-	EXPECT_FALSE(exchange_view_node->evaluate().has_value());
-	EXPECT_EQ(view.allocation_count(), 0);
+	EXPECT_TRUE(exchange_view_node->evaluate().has_value());
+	EXPECT_TRUE(std::isnan(view.sum()));
 
 	hydra->step();
-	EXPECT_FALSE(exchange_view_node->evaluate().has_value());
-	EXPECT_EQ(view.allocation_count(), 2);
-	EXPECT_FALSE(view.get_allocation(asset_index_1));
-	auto v2 = view.get_allocation(asset_index_2);
-	auto v3 = view.get_allocation(asset_index_3);
+	EXPECT_TRUE(exchange_view_node->evaluate().has_value());
+	EXPECT_TRUE(std::isnan(view[asset_index_1]));
+	auto v2 = view[asset_index_2];
+	auto v3 = view[asset_index_3];
 	double v2_actual = 99.0f / 101.5f;
 	double v3_actual = 101.4f / 101.5f;
-	EXPECT_TRUE(abs(v2.value()-v2_actual) < epsilon);
-	EXPECT_TRUE(abs(v3.value()-v3_actual) < epsilon);
+	EXPECT_TRUE(abs(v2-v2_actual) < epsilon);
+	EXPECT_TRUE(abs(v3-v3_actual) < epsilon);
 
 	hydra->step();
-	EXPECT_FALSE(exchange_view_node->evaluate().has_value());
-	EXPECT_EQ(view.allocation_count(), 3);
-	auto v1 = view.get_allocation(asset_index_1);
-	v2 = view.get_allocation(asset_index_2);
-	v3 = view.get_allocation(asset_index_3);
+	EXPECT_TRUE(exchange_view_node->evaluate().has_value());
+	EXPECT_EQ((view.array() > 0).count() , 3);
+	auto v1 = view[asset_index_1];
+	v2 = view[asset_index_2];
+	v3 = view[asset_index_3];
 	auto v1_actual = 103.0f / 101.0f;
 	v2_actual = 97.0f / 99.0f;
 	v3_actual = 88.0f / 101.4f;
-	EXPECT_TRUE(abs(v1.value() - v1_actual) < epsilon);
-	EXPECT_TRUE(abs(v2.value() - v2_actual) < epsilon);
-	EXPECT_TRUE(abs(v3.value() - v3_actual) < epsilon);
+	EXPECT_TRUE(abs(v1 - v1_actual) < epsilon);
+	EXPECT_TRUE(abs(v2 - v2_actual) < epsilon);
+	EXPECT_TRUE(abs(v3 - v3_actual) < epsilon);
 }
 
 
@@ -215,24 +214,22 @@ TEST_F(SimpleExchangeTests, TestExchangeViewNodeSort)
 	hydra->step();
 	auto view_opt = sort_node->evaluate();
 	EXPECT_TRUE(view_opt.has_value());
-	auto& view = view_opt.value();
-	EXPECT_EQ(view.allocation_count(), 1);
-	EXPECT_FALSE(view.search_allocation(asset_index_1));
-	EXPECT_FALSE(view.search_allocation(asset_index_3));
-	auto v2 = view.search_allocation(asset_index_2);
+	auto& weights = *(view_opt.value());
+	EXPECT_EQ((weights.array() > 0).count(), 1);
+	EXPECT_FALSE(weights[asset_index_1]);
+	EXPECT_FALSE(weights[asset_index_3]);
+	auto v2 = weights[asset_index_2];
 	double v2_actual = 99.0f / 101.5f;
-	EXPECT_TRUE(abs(v2.value() - v2_actual) < epsilon);
+	EXPECT_TRUE(abs(v2 - v2_actual) < epsilon);
 
 	hydra->step();
-	view_opt = sort_node->evaluate();
-	EXPECT_TRUE(view_opt.has_value());
-	view = view_opt.value();
-	EXPECT_EQ(view.allocation_count(), 1);
-	EXPECT_FALSE(view.search_allocation(asset_index_1));
-	EXPECT_FALSE(view.search_allocation(asset_index_2));
-	auto v3 = view.search_allocation(asset_index_3);
+	EXPECT_TRUE(sort_node->evaluate().has_value());
+	EXPECT_EQ((weights.array() > 0).count(), 1);
+	EXPECT_EQ(weights[asset_index_1], 0.0);
+	EXPECT_EQ(weights[asset_index_2], 0.0);
+	auto v3 = weights[asset_index_3];
 	auto v3_actual = 88.0f / 101.4f;
-	EXPECT_TRUE(abs(v2.value() - v2_actual) < epsilon);
+	EXPECT_TRUE(abs(v2 - v2_actual) < epsilon);
 
 }
 
