@@ -167,6 +167,8 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="modules\asset\Asset.Private.cpp" />
     <ClCompile Include="modules\ast\AgisStrategyTree.ixx" />
+    <ClCompile Include="modules\ast\AllocationNode.cpp" />
+    <ClCompile Include="modules\ast\AllocationNode.ixx" />
     <ClCompile Include="modules\ast\AssetNode.cpp" />
     <ClCompile Include="modules\ast\AssetNode.ixx" />
     <ClCompile Include="modules\ast\BaseNode.cpp" />

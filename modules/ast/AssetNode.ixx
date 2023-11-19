@@ -62,7 +62,7 @@ public:
 		this->set_warmup(abs(index));
 	}
 
-	AGIS_API ~AssetLambdaReadNode() = default;
+	AGIS_API virtual ~AssetLambdaReadNode() = default;
 
 	std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
@@ -90,6 +90,7 @@ public:
 		auto w(std::max(_right_node->get_warmup(), _left_node ? _left_node.value()->get_warmup() : 0));
 		this->set_warmup(w);
 	}
+	AGIS_API virtual ~AssetOpperationNode() = default;
 
 	double execute_opperation(double left, double right) const noexcept;
 
@@ -104,7 +105,7 @@ private:
 
 
 //==================================================================================================
-class AssetLambdaLogicalNode : public AssetLambdaNode
+export class AssetLambdaLogicalNode : public AssetLambdaNode
 {
 public:
 	using AgisLogicalRightVal = std::variant<double, UniquePtr<AssetLambdaNode>>;
@@ -114,6 +115,7 @@ public:
 		AgisLogicalRightVal right_node_,
 		bool numeric_cast = false
 	) noexcept;
+	AGIS_API virtual ~AssetLambdaLogicalNode() = default;
 
 	bool execute_opperation(double left, double right) const noexcept;
 

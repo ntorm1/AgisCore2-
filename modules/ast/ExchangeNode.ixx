@@ -19,19 +19,18 @@ import <expected>;
 import BaseNode;
 import AgisError;
 
-
 namespace Agis
 {
 
-
 namespace AST
 {
+
 //==================================================================================================
 export class ExchangeNode : public OpperationNode<Exchange const*>
 {
 public:
 	explicit ExchangeNode(Exchange const* exchange) : _exchange(std::move(exchange)) {}
-	AGIS_API ~ExchangeNode();
+	AGIS_API virtual ~ExchangeNode() = default;
 
 	Exchange const* evaluate() const noexcept override
 	{
@@ -56,7 +55,7 @@ public:
 		SharedPtr<ExchangeNode const> exchange_node,
 		UniquePtr<AssetLambdaNode> asset_lambda
 	);
-
+	AGIS_API virtual ~ExchangeViewNode();
 	AGIS_API std::expected<Eigen::VectorXd const*, AgisException> evaluate() noexcept override;
 
 	size_t get_warmup() const { return _warmup; }
@@ -82,19 +81,13 @@ export enum class ExchangeQueryType : uint8_t
 	NExtreme	/// return the N/2 smallest and largest
 };
 
-enum class ExchangeViewOpp
-{
-	UNIFORM,			/// applies 1/N weight to each pair
-};
-
-
 
 //==================================================================================================
 export class ExchangeViewSortNode : 
 	public ExpressionNode<std::expected<Eigen::VectorXd*,AgisException>>
 {
 public:
-	ExchangeViewSortNode(
+	AGIS_API ExchangeViewSortNode(
 		UniquePtr<ExchangeViewNode> exchange_view_node,
 		ExchangeQueryType query_type,
 		int n
@@ -104,13 +97,14 @@ public:
 		_weights.setZero();
 		_N = (n == -1) ? exchange_view_node->size() : static_cast<size_t>(n);
 	}
+	AGIS_API virtual ~ExchangeViewSortNode();
 
 	AGIS_API std::expected<Eigen::VectorXd*, AgisException>  evaluate() noexcept override;
 	size_t get_warmup() const { return _exchange_view_node->get_warmup(); }
-
+	size_t view_size() const noexcept { return _exchange_view_node->size(); }
 private:
-	//void uniform_weights();
 	void sort(size_t count, ExchangeQueryType type);
+
 	std::vector<std::pair<size_t, double>> _view;
 	Eigen::VectorXd _weights;
 	UniquePtr<ExchangeViewNode> _exchange_view_node;

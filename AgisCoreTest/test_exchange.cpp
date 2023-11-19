@@ -223,7 +223,10 @@ TEST_F(SimpleExchangeTests, TestExchangeViewNodeSort)
 	EXPECT_TRUE(abs(v2 - v2_actual) < epsilon);
 
 	hydra->step();
+	auto now = std::chrono::system_clock::now();
 	EXPECT_TRUE(sort_node->evaluate().has_value());
+	auto then = std::chrono::system_clock::now();
+	auto diff = std::chrono::duration_cast<std::chrono::microseconds>(then - now);
 	EXPECT_EQ((weights.array() > 0).count(), 1);
 	EXPECT_EQ(weights[asset_index_1], 0.0);
 	EXPECT_EQ(weights[asset_index_2], 0.0);

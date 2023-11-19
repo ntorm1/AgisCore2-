@@ -40,7 +40,7 @@ ExchangeViewNode::ExchangeViewNode(
 
 
 //==================================================================================================
-ExchangeNode::~ExchangeNode()
+ExchangeViewNode::~ExchangeViewNode()
 {
 }
 
@@ -87,30 +87,6 @@ ExchangeViewNode::evaluate() noexcept
 	return &_exchange_view;
 }
 
-/*
-//============================================================================
-void
-ExchangeViewSortNode::set_weights(ExchangeViewOpp opp) noexcept
-{
-	switch (opp)
-	{
-	case ExchangeViewOpp::UNIFORM:
-		uniform_weights();
-		break;
-	}
-}
-
-//============================================================================
-void ExchangeViewSortNode::uniform_weights()
-{
-	auto weight = 1.0f / static_cast<double>(_allocation_count);
-	for (auto& pair : _view) {
-		if (!pair) continue;
-		pair->amount = weight;
-	}
-}
-*/
-
 
 //==================================================================================================
 void
@@ -151,6 +127,12 @@ void
 		return;
 	}
 	}
+}
+
+
+//==================================================================================================
+ExchangeViewSortNode::~ExchangeViewSortNode()
+{
 }
 
 
