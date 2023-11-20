@@ -21,7 +21,9 @@ namespace AST
 //==================================================================================================
 ExchangeViewNode::ExchangeViewNode(
 	SharedPtr<ExchangeNode const> exchange_node,
-	UniquePtr<AssetLambdaNode> _assetLambdaNode) :
+	UniquePtr<AssetLambdaNode> _assetLambdaNode
+) :
+	ExpressionNode(NodeType::ExchangeView),
 	_exchange_node(exchange_node),
 	_asset_lambda(std::move(_assetLambdaNode)),
 	_exchange(exchange_node->evaluate())

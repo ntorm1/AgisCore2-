@@ -17,7 +17,8 @@ namespace AST
 //==================================================================================================
 AllocationNode::AllocationNode(
 	UniquePtr<ExchangeViewSortNode> weights_node,
-	AllocType alloc_type)
+	AllocType alloc_type
+	): ExpressionNode(NodeType::Allocation)
 {
 	_weights_node = std::move(weights_node);
 	_alloc_type = alloc_type;

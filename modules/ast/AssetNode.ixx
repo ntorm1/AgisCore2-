@@ -6,7 +6,7 @@ module;
 #define AGIS_API __declspec(dllimport)
 #endif
 #include "AgisDeclare.h"
-
+#include "AgisAST.h"
 export module AssetNode;
 
 import <optional>;
@@ -14,7 +14,6 @@ import <string>;
 import <variant>;
 
 import BaseNode;
-import LogicalNode;
 
 namespace Agis
 {
@@ -33,8 +32,8 @@ enum class AssetLambdaType {
 export class AssetLambdaNode : public OpperationNode<std::optional<double>,Asset const*>
 {
 public:
-	AssetLambdaNode(AssetLambdaType asset_lambda_type_) noexcept :
-		_asset_lambda_type(asset_lambda_type_)
+	AssetLambdaNode(NodeType type) noexcept
+		: OpperationNode(type)
 	{};
 
 	virtual ~AssetLambdaNode() {}
@@ -44,7 +43,6 @@ protected:
 	void set_warmup(size_t w) { this->_warmup = w; };
 
 private:
-	AssetLambdaType _asset_lambda_type;
 	size_t _warmup = 0;
 
 };
@@ -55,7 +53,7 @@ export class AssetLambdaReadNode : public AssetLambdaNode
 {
 public:
 	AssetLambdaReadNode(size_t column, int index) noexcept:
-		AssetLambdaNode(AssetLambdaType::READ),
+		AssetLambdaNode(NodeType::AssetRead),
 		_column(column),
 		_index(index)
 	{
@@ -82,7 +80,7 @@ public:
 		std::optional<UniquePtr<AssetLambdaNode>> left_node,
 		UniquePtr<AssetLambdaReadNode>&& right_node,
 		AgisOperator opp
-	) noexcept : AssetLambdaNode(AssetLambdaType::OPP),
+	) noexcept : AssetLambdaNode(NodeType::AssetOpp),
 	_left_node(std::move(left_node)),
 	_right_node(std::move(right_node)),
 	_opp(opp)

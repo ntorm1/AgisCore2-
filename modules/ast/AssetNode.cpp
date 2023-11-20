@@ -75,7 +75,7 @@ AssetLambdaLogicalNode::AssetLambdaLogicalNode(
 	AgisLogicalOperator _opp,
 	AgisLogicalRightVal right_node_,
 	bool numeric_cast
-) noexcept :	AssetLambdaNode(AssetLambdaType::LOGICAL),
+) noexcept :	AssetLambdaNode(NodeType::AssetLogical),
 	_left_node(std::move(left_node)),
 	_opp(_opp),
 	_right_node(std::move(right_node_)),

@@ -38,6 +38,12 @@
   <ImportGroup Label="Shared" />
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(oneTBBdpstdDir);$(IncludePath);$(SolutionDir)\include</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(oneTBBdpstdDir);$(IncludePath);$(SolutionDir)\include</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

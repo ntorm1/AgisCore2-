@@ -19,7 +19,10 @@ namespace AST
 
 //==================================================================================================
 StrategyNode::StrategyNode(Strategy& strategy, UniquePtr<AllocationNode> alloc_node, double epsilon)
-	: _strategy(strategy), _alloc_node(std::move(alloc_node)), _epsilon(epsilon)
+	:	ExpressionNode(NodeType::Strategy),
+		_strategy(strategy),
+		_alloc_node(std::move(alloc_node)),
+		_epsilon(epsilon)
 {
 }
 

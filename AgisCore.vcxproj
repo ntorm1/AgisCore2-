@@ -175,7 +175,6 @@
     <ClCompile Include="modules\ast\BaseNode.ixx" />
     <ClCompile Include="modules\ast\ExchangeNode.cpp" />
     <ClCompile Include="modules\ast\ExchangeNode.ixx" />
-    <ClCompile Include="modules\ast\LogicalNode.ixx" />
     <ClCompile Include="modules\ast\StrategyNode.cpp" />
     <ClCompile Include="modules\ast\StrategyNode.ixx" />
     <ClCompile Include="modules\exchange\Exchange.Core.cpp" />

@@ -29,7 +29,9 @@ namespace AST
 export class ExchangeNode : public OpperationNode<Exchange const*>
 {
 public:
-	explicit ExchangeNode(Exchange const* exchange) : _exchange(std::move(exchange)) {}
+	explicit ExchangeNode(Exchange const* exchange) 
+		:	OpperationNode(NodeType::Exchange),
+			_exchange(std::move(exchange)) {}
 	AGIS_API virtual ~ExchangeNode() = default;
 
 	Exchange const* evaluate() const noexcept override
@@ -91,7 +93,9 @@ public:
 		UniquePtr<ExchangeViewNode> exchange_view_node,
 		ExchangeQueryType query_type,
 		int n
-	) : _exchange_view_node(std::move(exchange_view_node)), _query_type(query_type)
+	) :	ExpressionNode(NodeType::ExchangeViewSort),
+		_exchange_view_node(std::move(exchange_view_node)),
+		_query_type(query_type)
 	{
 		_weights.resize(_exchange_view_node->size());
 		_weights.setZero();
