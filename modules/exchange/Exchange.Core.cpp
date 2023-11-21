@@ -348,6 +348,24 @@ Exchange::get_asset(size_t asset_index) const noexcept
 
 
 //============================================================================
+std::optional<Asset const*>
+Exchange::get_asset(std::string const& asset_id) const noexcept
+{
+	auto index = this->get_asset_index(asset_id);
+	if(!index) return std::nullopt;
+	return this->get_asset(*index);
+}
+
+
+//============================================================================
+std::vector<std::string> const&
+Exchange::get_columns() const noexcept
+{
+	return _p->columns;
+}
+
+
+//============================================================================
 std::optional<std::unique_ptr<Order>>
 Exchange::place_order(std::unique_ptr<Order> order) noexcept
 {

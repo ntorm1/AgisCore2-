@@ -161,6 +161,7 @@ Hydra::reset() noexcept
 std::optional<Strategy const*>
 Hydra::get_strategy(std::string const& strategy_id) const noexcept
 {
+	auto lock = std::shared_lock(_mutex);
 	return get_strategy_mut(strategy_id);
 }
 

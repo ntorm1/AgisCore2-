@@ -86,11 +86,11 @@ public:
 	std::optional<size_t> get_asset_index(std::string const& asset_id) const noexcept;
 	std::vector<long long> const& get_dt_index() const noexcept;
 	size_t get_index_offset() const noexcept { return _index_offset; }
+	
 	AGIS_API std::vector<UniquePtr<Asset>> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;
-
-
-
+	AGIS_API std::optional<Asset const*> get_asset(std::string const& asset_id) const noexcept;
+	AGIS_API std::vector<std::string> const& get_columns() const noexcept;
 };
 
 
