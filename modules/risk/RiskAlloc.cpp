@@ -12,11 +12,11 @@ namespace Risk
 
 //============================================================================
 EigenVectorD
-    risk_parity_weights_ccd_spinu(
-        EigenVectorD const& weights,
-        EigenMatrixD const& cov,
-        const double tol,
-        const int max_iter)
+risk_parity_weights_ccd_spinu(
+    EigenVectorD const& weights,
+    EigenMatrixD const& cov,
+    const double tol,
+    const int max_iter)
 {
     assert(weights.size() == cov.rows());
     double aux, x_diff, xk_sum;

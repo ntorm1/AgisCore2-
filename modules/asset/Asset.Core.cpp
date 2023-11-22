@@ -27,6 +27,15 @@ Asset::Asset(AssetPrivate* asset, std::string asset_id, size_t asset_index)
 }
 
 
+
+//============================================================================
+double*
+Asset::get_data_ptr() const noexcept
+{
+	return _p->_data_ptr;
+}
+
+
 //============================================================================
 void
 Asset::reset() noexcept
@@ -114,6 +123,28 @@ size_t Asset::columns() const noexcept
 }
 
 
+
+//============================================================================
+std::optional<double>
+Asset::get_pct_change(size_t column, size_t offset, size_t shift) const noexcept
+{
+#ifdef _DEBUG
+	if (_p->_current_index == 0 || abs(index) > static_cast<int>(_p->_current_index - 1) || index > 0)
+	{
+		return std::nullopt;
+	}
+	if (offset == 0)
+	{
+		return 0.0;
+	}
+#endif
+	auto current_idx = column - _p->_cols;
+	auto prev_idx =  column - _p->_cols - offset * _p->_cols;
+	current_idx -= shift * _p->_cols;
+	prev_idx -= shift * _p->_cols;
+	return (*(_p->_data_ptr + current_idx) - *(_p->_data_ptr + prev_idx)) / *(_p->_data_ptr + prev_idx);
+}
+
 //============================================================================
 std::optional<double>
 Asset::get_market_price(bool is_close) const noexcept
@@ -138,6 +169,7 @@ Asset::get_market_price(bool is_close) const noexcept
 //============================================================================
 std::optional<double> Asset::get_asset_feature(size_t column, int index) const noexcept
 {
+#ifdef _DEBUG
 	if (_p->_current_index == 0 || abs(index) > static_cast<int>(_p->_current_index - 1) || index > 0)
 	{
 		return std::nullopt;
@@ -150,6 +182,7 @@ std::optional<double> Asset::get_asset_feature(size_t column, int index) const n
 	{
 		return std::nullopt;
 	}
+#endif
 	size_t index_offset = (index == 0) ? 0 : static_cast<size_t>(std::abs(index) * _p->_cols);
 	return *(_p->_data_ptr + column - _p->_cols - index_offset);
 }
@@ -227,6 +260,13 @@ Asset::get_current_index() const noexcept
 {
 	if (_p->_current_index == 0) return 0;
 	return _p->_current_index - 1;
+}
+
+
+//============================================================================
+size_t Asset::get_close_index() const noexcept
+{
+	return _p->_close_index;
 }
 
 

@@ -8,6 +8,7 @@ namespace Agis
 	constexpr double ORDER_EPSILON = 1e-8;
 
 	class Asset;
+	class AssetObserver;
 
 	template <typename T>
 	using UniquePtr = std::unique_ptr<T>;

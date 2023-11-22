@@ -281,7 +281,9 @@ void Position::evaluate(bool on_close, bool is_reprice) noexcept
 }
 
 
-bool Position::is_last_row()
+//============================================================================
+bool
+Position::is_last_row()
 {
 	return (_asset.get_state() == AssetState::LAST);
 }

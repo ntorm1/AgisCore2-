@@ -38,6 +38,7 @@ class AssetFactory;
 //============================================================================
 export class Asset
 {
+	friend class AssetObserver;
 	friend class AssetFactory;
 	friend class Exchange;
 public:
@@ -47,10 +48,12 @@ public:
 	size_t rows() const noexcept;
 	size_t columns() const noexcept;
 	AssetState get_state() const noexcept { return _state;}
+	std::optional<double> get_pct_change(size_t column, size_t offset, size_t shift = 0) const noexcept;
 	std::optional<double> get_market_price(bool is_close) const noexcept;
 	std::optional<double> get_asset_feature(size_t column, int index) const noexcept;
 	std::string const& get_dt_format() const noexcept { return _dt_format; }
 	size_t get_current_index() const noexcept;
+	size_t get_close_index() const noexcept;
 	inline bool is_streaming() const noexcept 
 	{
 		return _state == AssetState::STREAMING || _state == AssetState::LAST;
@@ -68,8 +71,9 @@ public:
 	Asset(const Asset& other) = delete;
 	Asset& operator=(const Asset& other) = delete;
 	Asset(AssetPrivate* asset, std::string asset_id, size_t asset_index);
-private:
 
+private:
+	double* get_data_ptr() const noexcept;
 	void reset() noexcept;
 	AssetState step(long long global_time) noexcept;
 
