@@ -140,7 +140,10 @@ Hydra::step() noexcept
 	_p->master_portfolio.evaluate(true, false);
 
 	_p->current_index++;
-	_state = HydraState::RUN;
+	if (_p->current_index == _p->exchanges.get_dt_index().size())
+	{
+		_state = HydraState::FINISHED;
+	}
 	return true;
 }
 

@@ -26,6 +26,12 @@ export enum class AllocType : uint8_t
 	UNIFORM
 };
 
+export struct AllocParams
+{
+	AllocParams() = default;
+	std::optional<double> weight_clip = std::nullopt;
+};
+
 
 export class AllocationNode: 
 		public ExpressionNode<std::expected<Eigen::VectorXd*, AgisException>>
@@ -33,7 +39,8 @@ export class AllocationNode:
 public:
 	AGIS_API AllocationNode(
 		UniquePtr<ExchangeViewSortNode> weights_node,
-		AllocType alloc_type
+		AllocType alloc_type,
+		std::optional<AllocParams> alloc_params = std::nullopt
 	);
 	
 	AGIS_API virtual ~AllocationNode();
@@ -45,6 +52,7 @@ private:
 	void set_weights(Eigen::VectorXd& weights);
 
 	UniquePtr<ExchangeViewSortNode> _weights_node;
+	AllocParams _alloc_params;
 	double _epsilon;
 	AllocType _alloc_type;
 };

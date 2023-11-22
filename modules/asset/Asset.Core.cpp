@@ -180,6 +180,14 @@ std::vector<double> const& Asset::get_data() const noexcept
 
 
 //============================================================================
+std::string const&
+Asset::get_close_column() const noexcept
+{
+	return _p->_close_column;
+}
+
+
+//============================================================================
 std::optional<std::vector<double>>
 Asset::get_column(std::string const& column_name) const noexcept
 {

@@ -31,7 +31,8 @@ export enum class HydraState : uint8_t
 	INIT,
 	BUILT,
 	RUN,
-	STOP
+	STOP,
+	FINISHED,
 };
 
 export class Hydra

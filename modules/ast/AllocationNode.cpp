@@ -17,11 +17,16 @@ namespace AST
 //==================================================================================================
 AllocationNode::AllocationNode(
 	UniquePtr<ExchangeViewSortNode> weights_node,
-	AllocType alloc_type
+	AllocType alloc_type,
+	std::optional<AllocParams> alloc_params
 	): ExpressionNode(NodeType::Allocation)
 {
 	_weights_node = std::move(weights_node);
 	_alloc_type = alloc_type;
+	if (alloc_params)
+		_alloc_params = *alloc_params;
+	else
+		_alloc_params = AllocParams();
 }
 
 
@@ -53,6 +58,9 @@ AllocationNode::uniform_allocation(Eigen::VectorXd& weights)
 		return;
 	}
 	auto c = 1.0f / static_cast<double>(_weights_node->view_size());
+	if(_alloc_params.weight_clip) {
+		c = std::clamp(c, -1*(*_alloc_params.weight_clip), *_alloc_params.weight_clip);
+	}
 	for (auto i = 0; i < weights.size(); ++i) {
 		if (std::isnan(weights[i])) {
 			weights[i] = 0.0f;

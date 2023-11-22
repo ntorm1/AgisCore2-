@@ -19,6 +19,7 @@ export struct AssetPrivate
 	size_t _cols;
 	size_t _open_index;
 	size_t _close_index;
+	std::string _close_column;
 	size_t _current_index = 0;
 	std::vector<long long> _dt_index;
 	std::vector<double> _data;

@@ -50,16 +50,17 @@ public:
 	std::optional<double> get_market_price(bool is_close) const noexcept;
 	std::optional<double> get_asset_feature(size_t column, int index) const noexcept;
 	std::string const& get_dt_format() const noexcept { return _dt_format; }
-	std::optional<std::vector<double>> get_column(std::string const& column_name) const noexcept;
 	size_t get_current_index() const noexcept;
 	inline bool is_streaming() const noexcept 
 	{
 		return _state == AssetState::STREAMING || _state == AssetState::LAST;
 	}
+	AGIS_API std::optional<std::vector<double>> get_column(std::string const& column_name) const noexcept;
 	AGIS_API std::optional<size_t> get_streaming_index() const noexcept;
 	AGIS_API std::vector<long long> const& get_dt_index() const noexcept;
 	AGIS_API std::vector<std::string> get_column_names() const noexcept;
 	AGIS_API std::vector<double> const& get_data() const noexcept;
+	AGIS_API std::string const& get_close_column() const noexcept;
 	AGIS_API std::string const& get_id() const noexcept { return _asset_id; }
 
 

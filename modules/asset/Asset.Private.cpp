@@ -30,6 +30,7 @@ AssetPrivate::validate_headers()
 	};
 	// get lower case headers
 	std::unordered_set<std::string> lower_headers;
+	std::vector<std::string> headers_vec;
 	for (auto header : this->_headers)
 	{
 		auto h_copy = header.first;
@@ -39,6 +40,7 @@ AssetPrivate::validate_headers()
 			h_copy.begin(),
 			[](unsigned char c) { return std::tolower(c); });
 		lower_headers.insert(h_copy);
+		headers_vec.push_back(header.first);
 	}
 	// check if close and open are present
 	for (auto& header : required_headers) 
@@ -58,6 +60,7 @@ AssetPrivate::validate_headers()
 			else if (*it == "close") 
 			{
 				this->_close_index = index;
+				this->_close_column = headers_vec[index];
 			}
 		}
 	}

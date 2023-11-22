@@ -193,6 +193,10 @@
     <ClCompile Include="modules\portfolio\Position.ixx" />
     <ClCompile Include="modules\portfolio\Trade.cpp" />
     <ClCompile Include="modules\portfolio\Trade.ixx" />
+    <ClCompile Include="modules\risk\AgisRisk.ixx" />
+    <ClCompile Include="modules\risk\RiskAlloc.cpp" />
+    <ClCompile Include="modules\risk\RiskAlloc.ixx" />
+    <ClCompile Include="modules\risk\RiskDeclare.ixx" />
     <ClCompile Include="modules\standard\AgisArrayUtils.ixx" />
     <ClCompile Include="modules\asset\Asset.Core.cpp" />
     <ClCompile Include="modules\asset\Asset.Core.ixx" />
