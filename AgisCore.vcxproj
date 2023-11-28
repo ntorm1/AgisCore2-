@@ -166,6 +166,8 @@
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="modules\asset\Asset.Private.cpp" />
+    <ClCompile Include="modules\asset\AssetObserver.cpp" />
+    <ClCompile Include="modules\asset\AssetObserver.ixx" />
     <ClCompile Include="modules\ast\AgisStrategyTree.ixx" />
     <ClCompile Include="modules\ast\AllocationNode.cpp" />
     <ClCompile Include="modules\ast\AllocationNode.ixx" />
@@ -203,6 +205,7 @@
     <ClCompile Include="modules\asset\Asset.Private.ixx" />
     <ClCompile Include="modules\standard\AgisError.ixx" />
     <ClCompile Include="modules\standard\AgisFileUtils.ixx" />
+    <ClCompile Include="modules\standard\AgisPointers.ixx" />
     <ClCompile Include="modules\standard\AgisTimeUtils.ixx" />
     <ClCompile Include="modules\strategy\Strategy.cpp" />
     <ClCompile Include="modules\strategy\Strategy.ixx" />

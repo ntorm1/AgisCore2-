@@ -5,12 +5,24 @@ module;
 #include <unordered_set>
 #include <algorithm>
 
-module AssetModule:AssetPrivateModule;
+module AssetPrivateModule;
 
 import AgisTimeUtils;
 
 namespace Agis
 {
+
+
+//============================================================================
+void
+AssetPrivate::add_observer(UniquePtr<AssetObserver> observer) noexcept
+{
+	auto str_rep = observer->str_rep();
+	if(!observers.contains(str_rep))
+	{
+		observers[std::move(str_rep)] = std::move(observer);
+	}
+}
 
 
 //============================================================================
@@ -136,6 +148,12 @@ AssetPrivate::load_csv(
 	}
 
 	return true;
+}
+
+
+//============================================================================
+AssetPrivate::~AssetPrivate()
+{
 }
 
 }

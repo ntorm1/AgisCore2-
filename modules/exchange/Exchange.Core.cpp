@@ -2,7 +2,7 @@ module;
 
 #include "AgisMacros.h"
 #include "AgisDeclare.h"
-
+#include <ankerl/unordered_dense.h>
 module ExchangeModule;
 
 import <filesystem>;
@@ -163,6 +163,7 @@ Exchange::step(long long global_dt) noexcept
 	{
 		asset->step(global_dt);
 	}
+
 	// flag portfolios to call next step
 	for (auto& portfolio : registered_portfolios)
 	{
@@ -204,7 +205,6 @@ std::vector<UniquePtr<Asset>>& Exchange::get_assets_mut() noexcept
 {
 	return _p->assets;
 }
-
 
 //============================================================================
 size_t

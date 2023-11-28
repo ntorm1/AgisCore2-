@@ -1,4 +1,9 @@
-export module AssetModule:AssetPrivateModule;
+module;
+
+#include "AgisDeclare.h"
+#include <ankerl/unordered_dense.h>
+
+export module AssetPrivateModule;
 
 import <vector>;
 import <unordered_map>;
@@ -7,7 +12,7 @@ import <string>;
 
 
 import AgisError;
-
+import AssetObserverModule;
 
 namespace Agis 
 {
@@ -25,12 +30,14 @@ export struct AssetPrivate
 	std::vector<double> _data;
 	double* _data_ptr;
 	std::unordered_map<std::string, size_t> _headers;
+	ankerl::unordered_dense::map<std::string, UniquePtr<AssetObserver>> observers;
 
-
+	void add_observer(UniquePtr<AssetObserver> observer) noexcept;
 	size_t get_index(size_t row, size_t col);
 	std::expected<bool, AgisException> validate_headers();
 	std::expected<bool, AgisException> load_csv(std::string filename, std::string dt_format);
 
+	~AssetPrivate();
 	AssetPrivate()
 	{
 		_rows = 0;

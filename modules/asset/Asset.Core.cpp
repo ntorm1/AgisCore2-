@@ -9,8 +9,7 @@ module AssetModule;
 
 import <optional>;
 
-import :AssetPrivateModule;
-
+import AssetPrivateModule;
 import AgisFileUtils;
 
 namespace Agis
@@ -37,12 +36,29 @@ Asset::get_data_ptr() const noexcept
 
 
 //============================================================================
+StridedPointer<double const>
+Asset::get_close_span() const noexcept
+{
+	return StridedPointer<double const>(
+		_p->_data.data() + _p->_close_index,
+		_p->_cols,
+		_p->_rows
+	);
+}
+
+
+//============================================================================
 void
 Asset::reset() noexcept
 {
 	_p->_current_index = 0;
 	_p->_data_ptr = _p->_data.data();
 	_state = AssetState::PENDING;
+	if (!_p->observers.size()) return;
+	for (auto& [id, observer] : _p->observers)
+	{
+		observer->on_reset();
+	}
 }
 
 
@@ -61,8 +77,7 @@ Asset::step(long long global_time) noexcept
 	if (_p->_current_index == _p->_dt_index.size() - 1)
 	{
 		_state = AssetState::LAST;
-		_p->_current_index++;
-		_p->_data_ptr += _p->_cols;
+		advance();
 		return _state;
 	}
 	auto asset_time = _p->_dt_index[_p->_current_index];
@@ -72,8 +87,7 @@ Asset::step(long long global_time) noexcept
 			if (asset_time == global_time)
 			{
 				_state = AssetState::STREAMING;
-				_p->_data_ptr += _p->_cols;
-				_p->_current_index++;
+				advance();
 			}
 			break;
 		case AssetState::STREAMING:
@@ -83,22 +97,34 @@ Asset::step(long long global_time) noexcept
 			}
 			else
 			{
-				_p->_data_ptr += _p->_cols;
-				_p->_current_index++;
+				advance();
 			}
 			break;
 		case AssetState::DISABLED:
 			if (asset_time == global_time)
 			{
 				_state = AssetState::STREAMING;
-				_p->_data_ptr += _p->_cols;
-				_p->_current_index++;
+				advance();
 			}
 			break;
 		case AssetState::EXPIRED:
 			break;
 	}
 	return _state;
+}
+
+
+//============================================================================
+void
+Asset::advance() noexcept
+{
+	_p->_data_ptr += _p->_cols;
+	_p->_current_index++;
+	if(!_p->observers.size()) return;
+	for (auto& [id,observer] : _p->observers)
+	{
+		observer->on_step();
+	}
 }
 
 
@@ -129,7 +155,7 @@ std::optional<double>
 Asset::get_pct_change(size_t column, size_t offset, size_t shift) const noexcept
 {
 #ifdef _DEBUG
-	if (_p->_current_index == 0 || abs(index) > static_cast<int>(_p->_current_index - 1) || index > 0)
+	if (_p->_current_index == 0 || offset-shift > static_cast<int>(_p->_current_index - 1))
 	{
 		return std::nullopt;
 	}

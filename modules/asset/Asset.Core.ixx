@@ -16,9 +16,10 @@ import <memory>;
 import <expected>;
 import <vector>;
 import <optional>;
+import <span>;
 
 import AgisError;
-
+import AgisPointersModule;
 
 namespace Agis
 {
@@ -54,6 +55,8 @@ public:
 	std::string const& get_dt_format() const noexcept { return _dt_format; }
 	size_t get_current_index() const noexcept;
 	size_t get_close_index() const noexcept;
+	StridedPointer<double const> get_close_span() const noexcept;
+
 	inline bool is_streaming() const noexcept 
 	{
 		return _state == AssetState::STREAMING || _state == AssetState::LAST;
@@ -76,6 +79,7 @@ private:
 	double* get_data_ptr() const noexcept;
 	void reset() noexcept;
 	AssetState step(long long global_time) noexcept;
+	void advance() noexcept;
 
 	size_t _asset_index;
 	std::string _asset_id;
@@ -108,6 +112,5 @@ private:
 	std::string _dt_format;
 	std::string _exchange_id;
 };
-
 
 }
