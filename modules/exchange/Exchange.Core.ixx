@@ -5,7 +5,6 @@ module;
 #else
 #define AGIS_API __declspec(dllimport)
 #endif
-
 #include "AgisDeclare.h"
 #include <ankerl/unordered_dense.h>
 
@@ -87,6 +86,8 @@ public:
 	std::vector<long long> const& get_dt_index() const noexcept;
 	size_t get_index_offset() const noexcept { return _index_offset; }
 	
+	AGIS_API std::optional<double> get_covariance(size_t index1, size_t index2) const noexcept;
+	AGIS_API std::expected<bool, AgisException> init_covariance_matrix(size_t lookback, size_t step_size) noexcept;
 	AGIS_API std::vector<UniquePtr<Asset>> const& get_assets() const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(size_t asset_index) const noexcept;
 	AGIS_API std::optional<Asset const*> get_asset(std::string const& asset_id) const noexcept;

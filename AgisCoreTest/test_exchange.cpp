@@ -6,6 +6,7 @@
 
 import HydraModule;
 import ExchangeMapModule;
+import ExchangeModule;
 import AgisStrategyTree;
 import SerializeModule;
 
@@ -236,3 +237,40 @@ TEST_F(SimpleExchangeTests, TestExchangeViewNodeSort)
 
 }
 
+
+TEST_F(SimpleExchangeTests, TestCovarianceMatrix)
+{
+	hydra->build();
+	auto exchange = hydra->get_exchange_mut(exchange_id_1).value();
+	auto res = exchange->init_covariance_matrix(3, 1);
+	EXPECT_TRUE(res.has_value());
+	hydra->step();
+	EXPECT_FALSE(exchange->get_covariance(asset_index_2, asset_index_3).has_value());
+	hydra->step();
+	EXPECT_FALSE(exchange->get_covariance(asset_index_2, asset_index_3).has_value());
+	hydra->step();
+	EXPECT_FALSE(exchange->get_covariance(asset_index_2, asset_index_3).has_value());
+	hydra->step(); 
+	auto cov_opt = exchange->get_covariance(asset_index_2, asset_index_3);
+	EXPECT_TRUE(cov_opt.has_value());
+	EXPECT_DOUBLE_EQ(cov_opt.value(), 0.0017204053687263018);
+	EXPECT_DOUBLE_EQ(
+		exchange->get_covariance(asset_index_2, asset_index_2).value(),
+		0.0015830847810002959
+	);
+	EXPECT_DOUBLE_EQ(
+		exchange->get_covariance(asset_index_3, asset_index_3).value(),
+		0.0065064574946305069
+	);
+	hydra->step();
+	cov_opt = exchange->get_covariance(asset_index_2, asset_index_3);
+	EXPECT_DOUBLE_EQ(cov_opt.value(), 0.0015495361685585597);
+	EXPECT_DOUBLE_EQ(
+		exchange->get_covariance(asset_index_2, asset_index_2).value(),
+		0.0011658411500707344
+	);
+	EXPECT_DOUBLE_EQ(
+		exchange->get_covariance(asset_index_3, asset_index_3).value(),
+		0.019457579940568667
+	);
+}

@@ -212,6 +212,17 @@ Hydra::get_exchange(std::string const& exchange_id) const noexcept
 
 
 //============================================================================
+std::optional<Exchange*>
+Hydra::get_exchange_mut(std::string const& exchange_id) const noexcept
+{
+	auto lock = std::shared_lock(_mutex);
+	auto res = _p->exchanges.get_exchange_mut(exchange_id);
+	if (res) return res.value();
+	return std::nullopt;
+}
+
+
+//============================================================================
 std::vector<long long>
 const& Hydra::get_dt_index() const noexcept
 {

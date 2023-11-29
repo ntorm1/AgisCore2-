@@ -1,8 +1,9 @@
 module;
-
+#include <Eigen/Dense>
 #include "AgisMacros.h"
 #include "AgisDeclare.h"
 #include <ankerl/unordered_dense.h>
+
 module ExchangeModule;
 
 import <filesystem>;
@@ -10,6 +11,7 @@ import <unordered_map>;
 
 import PortfolioModule;
 import AssetModule;
+import AssetObserverModule;
 import AgisArrayUtils;
 import OrderModule;
 
@@ -18,6 +20,18 @@ namespace fs = std::filesystem;
 
 namespace Agis
 {
+
+struct CovarianceMatrix
+{
+	CovarianceMatrix() {
+		matrix = Eigen::MatrixXd::Zero(0, 0);
+		step_size = 0;
+		lookback = 0;
+	}
+	Eigen::MatrixXd matrix;
+	size_t lookback;
+	size_t step_size;
+};
 
 struct ExchangePrivate
 {
@@ -28,6 +42,7 @@ struct ExchangePrivate
 	AssetFactory* asset_factory;
 	std::vector<UniquePtr<Asset>> assets;
 	std::unordered_map<std::string, size_t> asset_index_map;
+	CovarianceMatrix covariance_matrix;
 	std::vector<std::unique_ptr<Order>> orders;
 
 	std::vector<long long> dt_index;
@@ -54,6 +69,7 @@ ExchangePrivate::ExchangePrivate(
 	exchange_index = _exchange_index;
 	dt_format = _dt_format;
 	asset_factory = new AssetFactory(dt_format, exchange_id);
+	covariance_matrix = CovarianceMatrix();
 }
 
 //============================================================================
@@ -289,6 +305,87 @@ Exchange::get_dt_index() const noexcept
 {
 	return _p->dt_index;
 }
+
+
+//============================================================================
+std::expected<Asset const*, AgisException>
+get_enclosing_asset(Asset const* a, Asset const* b)
+{
+	auto res = a->encloses(*b);
+	if(a->encloses(*b))
+	{
+		return a;
+	}
+	else if (b->encloses(*a))
+	{
+		return b;
+	}
+	return std::unexpected(AgisException("Assets: " + a->get_id() + " and " + b->get_id() + " do not have a common dt index"));
+}
+
+
+//============================================================================
+std::optional<double>
+Exchange::get_covariance(size_t index1, size_t index2) const noexcept
+{
+	// make sure covariance matrix was initialized
+	if (_p->covariance_matrix.matrix.rows() == 0)
+	{
+		return std::nullopt;
+	}
+	// make sure current row index is greater than lookback
+	if (_p->current_index <= _p->covariance_matrix.lookback)
+	{
+		return std::nullopt;
+	}
+	return _p->covariance_matrix.matrix(index1, index2);
+}
+
+
+//============================================================================
+std::expected<bool, AgisException>
+Exchange::init_covariance_matrix(size_t lookback, size_t step_size) noexcept
+{
+	_p->covariance_matrix.matrix = Eigen::MatrixXd::Zero(_p->assets.size(), _p->assets.size());
+	_p->covariance_matrix.lookback = lookback;
+	_p->covariance_matrix.step_size = step_size;
+	for (size_t i = 0; i < _p->assets.size(); i++)
+	{
+		for (size_t j = 0; j < i + 1; j++)
+		{
+			auto a1 = _p->assets[i].get();
+			auto a2 = _p->assets[j].get();
+			if (a1->rows() < lookback || a2->rows() < lookback)
+			{
+				continue;
+			}
+			auto enclosing_asset = get_enclosing_asset(a1, a2);
+			if (!enclosing_asset) 
+			{
+				return std::unexpected(enclosing_asset.error());
+			}
+			if (j == i)
+			{
+				auto observer = std::make_unique<ReturnsVarianceObserver>(*a1, lookback);
+				double* diagonal = &_p->covariance_matrix.matrix(i, j);
+				observer->set_pointer(diagonal);
+				a1->add_observer(std::move(observer));
+				continue;
+			}
+			else
+			{
+				auto observer = std::make_unique<ReturnsCovarianceObserver>(*a1, *a2, lookback, step_size);
+				double* upper_triangular = &_p->covariance_matrix.matrix(i, j);
+				double* lower_triangular = &_p->covariance_matrix.matrix(j, i);
+				observer->set_pointers(upper_triangular, lower_triangular);
+				a1->add_observer(std::move(observer));
+			}
+		}
+	}
+
+	return true;
+}
+
 
 //============================================================================
 std::vector<UniquePtr<Asset>> const&

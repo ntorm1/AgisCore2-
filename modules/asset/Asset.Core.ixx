@@ -57,6 +57,10 @@ public:
 	size_t get_close_index() const noexcept;
 	StridedPointer<double const> get_close_span() const noexcept;
 
+	bool encloses(Asset const& other) const noexcept;
+	std::optional<size_t> get_enclosing_index(Asset const& other) const noexcept;
+	void add_observer(UniquePtr<AssetObserver> observer) noexcept;
+
 	inline bool is_streaming() const noexcept 
 	{
 		return _state == AssetState::STREAMING || _state == AssetState::LAST;

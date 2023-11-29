@@ -12,53 +12,132 @@ AssetObserver::AssetObserver(Asset const& asset, ObserverType t) : _asset(asset)
 }
 
 
+
+
 //============================================================================
-VarianceObserver::VarianceObserver(Asset const& asset, size_t lockback) 
-	: AssetObserver(asset, ObserverType::Variance), _lookback(lockback), _sum_of_squares(0.0)
+SumObserver::SumObserver(Asset const& asset, size_t lockback, ObserverInput input)
+	: AssetObserver(asset, ObserverType::Sum), _lookback(lockback), _input(std::move(input)), _sum(0.0)
+{
+	this->on_reset();
+}
+
+
+//============================================================================
+void
+SumObserver::on_step() noexcept
+{
+	double v;
+	if (!std::holds_alternative<size_t>(_input))
+	{
+		auto& observer = std::get<UniquePtr<AssetObserver>>(_input);
+		observer->on_step();
+		v = observer->value();
+		_buffer[_current_index] = v;
+
+		// if add the end of the lookback period then remove the oldest value
+		auto next_index = (_current_index + 1) % _lookback;
+		if (_count >= _lookback - 1)
+		{
+			_sum -= _buffer[_current_index];
+		}
+	}
+	else
+	{
+		auto index = std::get<size_t>(_input);
+		v = _asset.get_asset_feature(index, 0).value();
+		if (_count >= _lookback)
+		{
+			auto row = -1 * static_cast<int>(_lookback);
+			_sum -= _asset.get_asset_feature(index, row).value();
+		}
+	}
+	_sum += v;
+	_count++;
+}
+
+
+//============================================================================
+void
+SumObserver::on_reset() noexcept
+{
+	if (!std::holds_alternative<size_t>(_input))
+	{
+		_buffer.clear();
+		_buffer.resize(_lookback, 0.0f);
+	}
+	else
+	{
+		_buffer.clear();
+		_buffer.shrink_to_fit();
+	}
+	_sum = 0.0f;
+	_count = 0;
+	_current_index = 0;
+}
+
+
+
+//============================================================================
+ReturnsVarianceObserver::ReturnsVarianceObserver(Asset const& asset, size_t lockback)
+	:	AssetObserver(asset, ObserverType::Variance),
+		_lookback(lockback),
+		_sum_of_squares(0.0),
+		_span(_asset.get_close_span())
 {
 	_close_column_index = _asset.get_close_index();
 }
 
 
 //============================================================================
-void VarianceObserver::on_step() noexcept
+void ReturnsVarianceObserver::on_step() noexcept
 {
-	_count++;
-	if (_count == 1) return;
-	double current_pct_change = *(_asset.get_pct_change(_close_column_index,1));
-	_sum += current_pct_change;
-	_sum_of_squares += current_pct_change * current_pct_change;
-	if (_count > _lookback + 1)
-	{
-		double _mean = _sum / _lookback;
-		_variance = (_sum_of_squares - _lookback * _mean * _mean) / (_lookback - 1);
-
-		double old_pct_change = *(_asset.get_pct_change(_close_column_index,1, _lookback));
-		_sum -= old_pct_change;
-		_sum_of_squares -= old_pct_change * old_pct_change;
+	if (_count == 0) {
+		_count++;
+		return;
 	}
+	double pct_change = (_span[_count] - _span[_count - 1]) / _span[_count - 1];
+	_sum += pct_change;
+	_sum_of_squares += pct_change * pct_change;
+	if (_count < _lookback) {
+		_count++;
+		return;
+	}
+	// if out of warmup period then remove the previous value
+	if (_count > _lookback) {
+		size_t index_prev = (_count - 1) - (_lookback * 1 - 1);
+		pct_change = (_span[index_prev] - _span[index_prev - 1]) / _span[index_prev - 1];
+		_sum -= pct_change;
+		_sum_of_squares -= pct_change * pct_change;
+	}
+	// calculate variance with updated sum and sum of squares
+	double _mean = _sum / _lookback;
+	_variance = (_sum_of_squares - _lookback * _mean * _mean) / (_lookback - 1);
+
+
+	*_diagnoal_ptr = _variance;
+	_count++;
 }
 
 
 //============================================================================
-void VarianceObserver::on_reset() noexcept
+void ReturnsVarianceObserver::on_reset() noexcept
 {
 	_count = 0;
 	_variance = 0.0;
 	_sum_of_squares = 0.0;
+	*_diagnoal_ptr = 0.0;
 }
 
 
 //============================================================================
 std::string
-VarianceObserver::str_rep() const noexcept
+ReturnsVarianceObserver::str_rep() const noexcept
 {
 	return "VAR" + _asset.get_id() + std::to_string(_lookback);
 }
 
-
 //============================================================================
-CovarianceObserver::CovarianceObserver(
+ReturnsCovarianceObserver::ReturnsCovarianceObserver(
 	Asset const& parent,
 	Asset const& child,
 	size_t lookback,
@@ -70,12 +149,13 @@ CovarianceObserver::CovarianceObserver(
 	_enclosing_span(_asset.get_close_span()),
 	_child_span(_child.get_close_span())
 {
+	_enclosing_span_start_index = _asset.get_enclosing_index(_child).value();
 }
 
 
 //============================================================================
 void
-CovarianceObserver::on_step() noexcept
+ReturnsCovarianceObserver::on_step() noexcept
 {
 	// If the current index is less than the enclosing span start index then return,
 	// not in the time period in which the two assets have overlapping data
@@ -122,14 +202,13 @@ CovarianceObserver::on_step() noexcept
 	this->_covariance = (this->_sum_product - this->_sum1 * this->_sum2 / this->_lookback) / (this->_lookback - 1);
 	*this->_upper_triangular = this->_covariance;
 	*this->_lower_triangular = this->_covariance;
-
 	this->_index++;
 }
 	
 
 //============================================================================
 void
-CovarianceObserver::on_reset() noexcept
+ReturnsCovarianceObserver::on_reset() noexcept
 {
 
 	_sum1 = 0.0;
@@ -150,7 +229,7 @@ CovarianceObserver::on_reset() noexcept
 
 //============================================================================
 std::string
-CovarianceObserver::str_rep() const noexcept
+ReturnsCovarianceObserver::str_rep() const noexcept
 {
 	return  "COV_" + 
 		_asset.get_id() + "_" +
@@ -162,7 +241,7 @@ CovarianceObserver::str_rep() const noexcept
 
 //============================================================================
 void
-CovarianceObserver::set_pointers(double* upper_triangular_, double* lower_triangular_)
+ReturnsCovarianceObserver::set_pointers(double* upper_triangular_, double* lower_triangular_)
 {
 	this->_upper_triangular = upper_triangular_;
 	this->_lower_triangular = lower_triangular_;

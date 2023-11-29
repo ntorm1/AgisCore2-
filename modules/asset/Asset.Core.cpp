@@ -41,8 +41,8 @@ Asset::get_close_span() const noexcept
 {
 	return StridedPointer<double const>(
 		_p->_data.data() + _p->_close_index,
-		_p->_cols,
-		_p->_rows
+		_p->_rows,
+		_p->_cols
 	);
 }
 
@@ -146,6 +146,46 @@ size_t Asset::rows() const noexcept
 size_t Asset::columns() const noexcept
 {
 	return _p->_cols;
+}
+
+
+//============================================================================
+bool
+Asset::encloses(Asset const& other) const noexcept
+{
+	if(_p->_rows < other._p->_rows) return false;
+	auto other_index = other.get_dt_index();
+	auto other_start = get_enclosing_index(other);
+	if (!other_start) return false;
+	for (size_t i = 0; i < other.rows(); i++)
+	{
+		if (i > _p->_rows) return false;
+		if (_p->_dt_index[*other_start + i] != other_index[i])
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+
+//============================================================================
+std::optional<size_t>
+Asset::get_enclosing_index(Asset const& other) const noexcept
+{
+	auto other_index = other.get_dt_index();
+	auto other_start = other_index.front();
+	auto it = std::find(_p->_dt_index.begin(), _p->_dt_index.end(), other_start);
+	if (it == _p->_dt_index.end()) return std::nullopt;
+	return static_cast<size_t>(std::distance(_p->_dt_index.begin(), it));
+}
+
+
+//============================================================================
+void
+Asset::add_observer(UniquePtr<AssetObserver> observer) noexcept
+{
+	_p->add_observer(std::move(observer));
 }
 
 
