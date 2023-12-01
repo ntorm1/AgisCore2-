@@ -21,12 +21,6 @@ namespace Agis
 namespace AST
 {
 
-enum class AssetLambdaType {
-	READ,		///< Asset lambda read opp reads data from an asset at specific column and relative index
-	OPP,		///< Asset lambda opp applies arithmatic opperation to two asset lambda nodes
-	LOGICAL		///< Asset lambda logical opp compares asset lambda nodes to return a boolean value
-};
-
 
 //==================================================================================================
 export class AssetLambdaNode : public OpperationNode<std::optional<double>,Asset const*>
@@ -73,12 +67,26 @@ private:
 
 
 //==================================================================================================
+export class AssetObserverNode : public ExpressionNode<double>
+{
+public:
+	AssetObserverNode(AssetObserver* observer);
+
+	double evaluate() noexcept override;
+
+private:
+	AssetObserver* _observer;
+
+};
+
+
+//==================================================================================================
 export class AssetOpperationNode : public AssetLambdaNode
 {
 public:
 	AssetOpperationNode(
 		std::optional<UniquePtr<AssetLambdaNode>> left_node,
-		UniquePtr<AssetLambdaReadNode>&& right_node,
+		UniquePtr<AssetLambdaNode>&& right_node,
 		AgisOperator opp
 	) noexcept : AssetLambdaNode(NodeType::AssetOpp),
 	_left_node(std::move(left_node)),
@@ -97,7 +105,7 @@ public:
 
 private:
 	std::optional<UniquePtr<AssetLambdaNode>> _left_node;
-	UniquePtr<AssetLambdaReadNode> _right_node;
+	UniquePtr<AssetLambdaNode> _right_node;
 	AgisOperator _opp;
 };
 
@@ -125,8 +133,6 @@ private:
 	AgisLogicalRightVal _right_node;
 	bool _numeric_cast = false;
 };
-
-
 
 }
 

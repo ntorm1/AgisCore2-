@@ -80,7 +80,7 @@ EigenVectorD
 
 //============================================================================
 void
-equal_volatility_weights(EigenVectorD& weights, EigenMatrixD const& cov)
+vol_scale_weights(EigenVectorD& weights, EigenMatrixD const& cov)
 {
     assert(weights.size() == cov.rows());
     auto n = weights.size();

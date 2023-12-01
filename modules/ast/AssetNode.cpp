@@ -7,6 +7,7 @@ module AssetNode;
 import <optional>;
 
 import AssetModule;
+import AssetObserverModule;
 
 #define AGIS_NAN std::numeric_limits<double>::quiet_NaN()
 
@@ -16,6 +17,22 @@ namespace Agis
 
 namespace AST
 {
+
+
+//==================================================================================================
+AssetObserverNode::AssetObserverNode(AssetObserver* observer) 
+	: ExpressionNode(NodeType::AssetObserver), _observer(observer)
+{
+}
+
+
+//==================================================================================================
+double
+AssetObserverNode::evaluate() noexcept
+{
+	return _observer->value();
+}
+
 
 //============================================================================
 std::optional<double>
@@ -108,7 +125,9 @@ AssetLambdaLogicalNode::execute_opperation(double left, double right) const noex
 		case AgisLogicalOperator::NOT_EQUAL:
 			return left != right;
 	}
+	return false;
 }
+
 
 //============================================================================
 std::optional<double>

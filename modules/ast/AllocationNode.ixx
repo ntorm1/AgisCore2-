@@ -23,9 +23,12 @@ namespace AST
 
 export enum class AllocType : uint8_t
 {
-	UNIFORM
+	UNIFORM,
+	RANK
 };
 
+
+//============================================================================
 export struct AllocParams
 {
 	AllocParams() = default;
@@ -33,6 +36,8 @@ export struct AllocParams
 };
 
 
+
+//============================================================================
 export class AllocationNode: 
 		public ExpressionNode<std::expected<Eigen::VectorXd*, AgisException>>
 {
@@ -48,6 +53,7 @@ public:
 	std::expected<Eigen::VectorXd*, AgisException> evaluate() noexcept override;
 
 private:
+	void rank_allocation(Eigen::VectorXd& weights);
 	void uniform_allocation(Eigen::VectorXd& weights);
 	void set_weights(Eigen::VectorXd& weights);
 

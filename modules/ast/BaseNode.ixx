@@ -24,6 +24,7 @@ private:
 	NodeType _type;
 };
 
+
 //============================================================================
 export template <typename T>
 class ExpressionNode : public ASTNode {

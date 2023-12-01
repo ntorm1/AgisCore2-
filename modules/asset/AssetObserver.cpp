@@ -12,10 +12,8 @@ AssetObserver::AssetObserver(Asset const& asset, ObserverType t) : _asset(asset)
 }
 
 
-
-
 //============================================================================
-SumObserver::SumObserver(Asset const& asset, size_t lockback, ObserverInput input)
+SumObserver::SumObserver(Asset const& asset, size_t lockback, UniquePtr<AssetObserver> input)
 	: AssetObserver(asset, ObserverType::Sum), _lookback(lockback), _input(std::move(input)), _sum(0.0)
 {
 	this->on_reset();
@@ -26,30 +24,23 @@ SumObserver::SumObserver(Asset const& asset, size_t lockback, ObserverInput inpu
 void
 SumObserver::on_step() noexcept
 {
-	double v;
-	if (!std::holds_alternative<size_t>(_input))
+	_input->on_step();
+	auto v = _input->value();
+	if (_input->type() != ObserverType::Read)
 	{
-		auto& observer = std::get<UniquePtr<AssetObserver>>(_input);
-		observer->on_step();
-		v = observer->value();
-		_buffer[_current_index] = v;
-
 		// if add the end of the lookback period then remove the oldest value
+		_buffer[_current_index] = v;
 		auto next_index = (_current_index + 1) % _lookback;
 		if (_count >= _lookback - 1)
 		{
 			_sum -= _buffer[_current_index];
 		}
 	}
-	else
+	else if (_count >= _lookback - 1)
 	{
-		auto index = std::get<size_t>(_input);
-		v = _asset.get_asset_feature(index, 0).value();
-		if (_count >= _lookback)
-		{
-			auto row = -1 * static_cast<int>(_lookback);
-			_sum -= _asset.get_asset_feature(index, row).value();
-		}
+		auto row = -1 * static_cast<int>(_lookback);
+		auto p = static_cast<AssetReadObserver*>(_input.get());
+		_sum -= _input->asset().get_asset_feature(p->column(), row).value();
 	}
 	_sum += v;
 	_count++;
@@ -60,12 +51,13 @@ SumObserver::on_step() noexcept
 void
 SumObserver::on_reset() noexcept
 {
-	if (!std::holds_alternative<size_t>(_input))
+	_input->on_reset();
+	if (_input->type() != ObserverType::Read)
 	{
 		_buffer.clear();
 		_buffer.resize(_lookback, 0.0f);
 	}
-	else
+	else if (_buffer.capacity())
 	{
 		_buffer.clear();
 		_buffer.shrink_to_fit();
@@ -241,10 +233,83 @@ ReturnsCovarianceObserver::str_rep() const noexcept
 
 //============================================================================
 void
+AssetReadObserver::on_step() noexcept
+{
+	_value = _asset.get_asset_feature(_column, 0).value();
+}
+
+
+//============================================================================
+void
 ReturnsCovarianceObserver::set_pointers(double* upper_triangular_, double* lower_triangular_)
 {
 	this->_upper_triangular = upper_triangular_;
 	this->_lower_triangular = lower_triangular_;
 }
+
+
+//============================================================================
+CorrelationObserver::CorrelationObserver(
+	Asset const& parent,
+	size_t lookback,
+	UniquePtr<AssetObserver> x_input,
+	UniquePtr<AssetObserver> y_input
+)	: AssetObserver(parent, ObserverType::Correlation), _lookback(lookback), _x_input(std::move(x_input)), _y_input(std::move(y_input))
+{
+	if (_x_input->type() != ObserverType::Read)
+	{
+		_x_buffer.resize(_lookback, 0.0f);
+	}
+	if (_y_input->type() != ObserverType::Read)
+	{
+		_y_buffer.resize(_lookback, 0.0f);
+	}
+}
+
+
+//============================================================================
+void
+CorrelationObserver::on_reset() noexcept
+{
+	_sum_x = _sum_y = _sum_xy = _sum_x_squared = _sum_y_squared = 0.0;
+	_current_index = _count = 0;
+	_x_input->on_reset();
+	_y_input->on_reset();
+	if (_x_input->type() != ObserverType::Read)
+	{
+		std::fill(_x_buffer.begin(), _x_buffer.end(), 0.0f);
+	}
+	else if (_x_buffer.capacity())
+	{
+		_x_buffer.clear();
+		_x_buffer.shrink_to_fit();
+	}
+	if (_y_input->type() != ObserverType::Read)
+	{
+		std::fill(_y_buffer.begin(), _y_buffer.end(), 0.0f);
+	}
+	else if (_y_buffer.capacity())
+	{
+		_y_buffer.clear();
+		_y_buffer.shrink_to_fit();
+	}
+}
+
+
+//============================================================================
+void
+CorrelationObserver::on_step() noexcept
+{
+	_x_input->on_step();
+	_y_input->on_step();
+	auto x = _x_input->value();
+	auto y = _y_input->value();
+	_sum_x += x;
+	_sum_y += y;
+	_sum_xy += x * y;
+	_sum_x_squared += x * x;
+	_sum_y_squared += y * y;
+}
+
 
 }

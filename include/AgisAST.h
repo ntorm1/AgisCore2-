@@ -14,6 +14,7 @@ namespace AST
 		AssetRead,
 		AssetOpp,
 		AssetLogical,
+		AssetObserver,
 		Exchange,
 		ExchangeView,
 		ExchangeViewSort,

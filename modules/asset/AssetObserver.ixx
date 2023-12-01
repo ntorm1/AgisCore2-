@@ -16,11 +16,15 @@ namespace Agis
 
 export enum ObserverType : uint16_t
 {
+	Read,
 	Variance,
 	Covariance,
 	Sum,
+	Correlation
 };
 
+
+//============================================================================
 export class AssetObserver
 {
 public:
@@ -32,26 +36,26 @@ public:
 	virtual std::string str_rep() const noexcept = 0;
 	virtual double value() const noexcept = 0;
 
-protected:
+	ObserverType type() const noexcept { return _type; }
 	Asset const& asset() const { return _asset; }
+protected:
 	double const* _data_ptr;
 	Asset const& _asset;
 	ObserverType _type;
 };
 
 
-
+//============================================================================
 export class SumObserver : public AssetObserver
 {
 public:
-	using ObserverInput = std::variant<UniquePtr<AssetObserver>, size_t>;
-	SumObserver(Asset const& asset, size_t lookback, ObserverInput input);
+	SumObserver(Asset const& asset, size_t lookback, UniquePtr<AssetObserver> input);
 private:
 
 	void on_step() noexcept override;
 	void on_reset() noexcept override;
 
-	ObserverInput _input;
+	UniquePtr<AssetObserver> _input;
 	size_t _lookback;
 	size_t _current_index = 0;
 	size_t _count = 0;
@@ -60,6 +64,55 @@ private:
 };
 
 
+//============================================================================
+export class AssetReadObserver : public AssetObserver
+{
+public:
+	AssetReadObserver(Asset const& asset, size_t column) : AssetObserver(asset, ObserverType::Read), _column(column) {}
+	void on_step() noexcept override;
+	void on_reset() noexcept override {}
+	size_t warmup() noexcept override { return 0; }
+	double value() const noexcept override { return _value; }
+
+	size_t column() const noexcept { return _column; }
+
+private:
+	size_t _column;
+	double _value = 0;
+};
+
+
+//============================================================================
+export class CorrelationObserver : public AssetObserver
+{
+public:
+	CorrelationObserver(
+		Asset const& parent,
+		size_t lookback,
+		UniquePtr<AssetObserver> x_input,
+		UniquePtr<AssetObserver> y_input
+	);
+	void on_step() noexcept override;
+	void on_reset() noexcept override;
+	size_t warmup() noexcept override { return _lookback; }
+	
+private:
+	UniquePtr<AssetObserver> _x_input;
+	UniquePtr<AssetObserver> _y_input;
+	size_t _lookback;
+	size_t _count = 0;
+	size_t _current_index = 0;
+	double _sum_x;
+	double _sum_y;
+	double _sum_xy;
+	double _sum_x_squared;
+	double _sum_y_squared;
+	std::vector<double> _x_buffer;
+	std::vector<double> _y_buffer;
+};
+
+
+//============================================================================
 export class ReturnsVarianceObserver : public AssetObserver
 {
 public:
@@ -84,6 +137,7 @@ private:
 };
 
 
+//============================================================================
 export class ReturnsCovarianceObserver : public AssetObserver
 { 
 

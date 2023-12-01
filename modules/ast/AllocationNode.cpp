@@ -51,6 +51,22 @@ AllocationNode::evaluate() noexcept
 
 //==================================================================================================
 void
+AllocationNode::rank_allocation(Eigen::VectorXd& weights)
+{
+	std::vector<int> indices(weights.size(), 0);
+	std::sort(indices.begin(), indices.end(), [&weights](int i1, int i2) {
+		return weights[i1] > weights[i2];
+	});
+	std::vector<double> ranks(weights.size(), 0.0f);
+	double sum = ranks.size() * (ranks.size() + 1) / 2;
+	for (size_t i = 0; i < indices.size(); ++i) {
+		ranks[indices[i]] = (static_cast<double>(i) / sum);
+	}
+}
+
+
+//==================================================================================================
+void
 AllocationNode::uniform_allocation(Eigen::VectorXd& weights)
 {
 	if (!_weights_node->view_size()) {
