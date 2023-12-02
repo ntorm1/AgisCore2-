@@ -1,5 +1,6 @@
 module;
 #include <Eigen/Dense>
+#include <H5Cpp.h>
 #include "AgisMacros.h"
 #include "AgisDeclare.h"
 #include <ankerl/unordered_dense.h>
@@ -111,6 +112,40 @@ std::expected<bool, AgisException> Exchange::load_folder() noexcept
 	return true;
 }
 
+
+//============================================================================
+std::expected<bool, AgisException>
+Exchange::load_h5() noexcept
+{
+	H5::H5File file(this->_source, H5F_ACC_RDONLY);
+	int numObjects = file.getNumObjs();
+	for (size_t i = 0; i < numObjects; i++)
+	{
+		try {
+			std::string asset_id = file.getObjnameByIdx(i);
+			H5::DataSet dataset = file.openDataSet(asset_id + "/data");
+			H5::DataSpace dataspace = dataset.getSpace();
+			H5::DataSet datasetIndex = file.openDataSet(asset_id + "/datetime");
+			H5::DataSpace dataspaceIndex = datasetIndex.getSpace();
+			AGIS_ASSIGN_OR_RETURN(asset, _p->asset_factory->create_asset(
+				asset_id, _source, dataset, dataspace, datasetIndex, dataspaceIndex)
+			);
+			_p->assets.push_back(std::move(asset));
+		}
+		catch (H5::Exception& e) {
+			return std::unexpected<AgisException>("Error loading asset: " + std::string(e.getCDetailMsg()));
+		}
+		catch (const std::exception& e) {
+			return std::unexpected<AgisException>("Error loading asset: " + std::string(e.what()));
+		}
+		catch (...) {
+			return std::unexpected<AgisException>("Error loading asset: Unknown error");
+		}
+	}
+	return true;
+}
+
+
 //============================================================================
 std::expected<bool, AgisException> Exchange::load_assets() noexcept
 {
@@ -128,7 +163,12 @@ std::expected<bool, AgisException> Exchange::load_assets() noexcept
 	}
 	else
 	{
-		return std::unexpected(AgisException("Source path is not a directory"));
+		// validate file has h5 extension
+		if (source_path.extension() != ".h5")
+		{
+			return std::unexpected(AgisException("Source file is not an h5 file"));
+		}
+		AGIS_ASSIGN_OR_RETURN(res, this->load_h5());
 	}
 	for (auto& asset : _p->assets)
 	{
@@ -141,8 +181,8 @@ std::expected<bool, AgisException> Exchange::load_assets() noexcept
 		else
 		{
 			auto asset_columns = asset->get_column_names();
-			// if the two vectors are not equal, throw exception
-			if (_p->columns != asset_columns)
+			// for now skip h5, since it does not have columns names
+			if (_p->columns != asset_columns && (source_path.extension() != ".h5"))
 			{
 				return std::unexpected(AgisException("Asset columns do not match"));
 			}

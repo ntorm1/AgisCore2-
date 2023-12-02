@@ -152,6 +152,48 @@ AssetPrivate::load_csv(
 
 
 //============================================================================
+std::expected<bool, AgisException> AssetPrivate::load_h5(
+	H5::DataSet& dataset,
+	H5::DataSpace& dataspace,
+	H5::DataSet& datasetIndex,
+	H5::DataSpace& dataspaceIndex)
+{
+	// Get the number of attributes associated with the dataset
+	int numAttrs = dataset.getNumAttrs();
+	// Iterate through the attributes to find the column names
+	for (int i = 0; i < numAttrs; i++) {
+		// Get the attribute at index i
+		H5::Attribute attr = dataset.openAttribute(i);
+
+		// Check if the attribute is a string type
+		if (attr.getDataType().getClass() == H5T_STRING) {
+			// Read the attribute as a string
+			std::string attrValue;
+			attr.read(attr.getDataType(), attrValue);
+
+			// Store the attribute value as a column name
+			this->_headers[attrValue] = static_cast<size_t>(i);
+		}
+	}
+	AGIS_ASSIGN_OR_RETURN(res, this->validate_headers());
+	// Get the number of rows and columns from the dataspace
+	int numDims = dataspace.getSimpleExtentNdims();
+	std::vector<hsize_t> dims(numDims);
+	dataspace.getSimpleExtentDims(dims.data(), nullptr);
+	_rows = dims[0];
+	_cols = dims[1];
+	// Allocate memory for the column-major array
+	_data.resize(_rows * _cols, 0);
+	dataset.read(_data.data(), H5::PredType::NATIVE_DOUBLE, dataspace);
+
+	// Allocate memory for the array to hold the data
+	_dt_index.resize(_rows, 0);
+	datasetIndex.read(_dt_index.data(), H5::PredType::NATIVE_INT64, dataspaceIndex);
+	return true;
+}
+
+
+//============================================================================
 AssetPrivate::~AssetPrivate()
 {
 }

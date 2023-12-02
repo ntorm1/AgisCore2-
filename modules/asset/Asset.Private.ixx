@@ -1,5 +1,5 @@
 module;
-
+#include <H5Cpp.h>
 #include "AgisDeclare.h"
 #include <ankerl/unordered_dense.h>
 
@@ -36,6 +36,13 @@ export struct AssetPrivate
 	size_t get_index(size_t row, size_t col);
 	std::expected<bool, AgisException> validate_headers();
 	std::expected<bool, AgisException> load_csv(std::string filename, std::string dt_format);
+	std::expected<bool, AgisException> load_h5(
+		H5::DataSet& dataset,
+		H5::DataSpace& dataspace,
+		H5::DataSet& datasetIndex,
+		H5::DataSpace& dataspaceIndex
+	);
+
 
 	~AssetPrivate();
 	AssetPrivate()

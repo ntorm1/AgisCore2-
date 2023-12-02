@@ -6,7 +6,7 @@ module;
 #else
 #define AGIS_API __declspec(dllimport)
 #endif
-
+#include <H5Cpp.h>
 #include "AgisDeclare.h"
 
 export module AssetModule;
@@ -109,6 +109,15 @@ public:
 	std::expected<UniquePtr<Asset>, AgisException> create_asset(
 		std::string asset_name,
 		std::string source
+	);
+
+	std::expected<UniquePtr<Asset>, AgisException> create_asset(
+		std::string asset_name,
+		std::string source,
+		H5::DataSet& dataset,
+		H5::DataSpace& dataspace,
+		H5::DataSet& datasetIndex,
+		H5::DataSpace& dataspaceIndex
 	);
 
 private:

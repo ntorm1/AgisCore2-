@@ -358,5 +358,24 @@ AssetFactory::create_asset(
 }
 
 
+//============================================================================
+std::expected<UniquePtr<Asset>, AgisException>
+AssetFactory::create_asset(
+	std::string asset_name,
+	std::string source,
+	H5::DataSet& dataset,
+	H5::DataSpace& dataspace,
+	H5::DataSet& datasetIndex,
+	H5::DataSpace& dataspaceIndex)
+{
+	auto asset = new AssetPrivate();
+	AGIS_ASSIGN_OR_RETURN(res, asset->load_h5(dataset, dataspace, datasetIndex, dataspaceIndex));
+	auto m = std::make_unique<Asset>(asset, asset_name, _asset_counter);
+	m->_dt_format = _dt_format;
+	_asset_counter++;
+	return m;
+}
+
+
 
 };

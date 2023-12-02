@@ -16,7 +16,7 @@ using namespace Agis::AST;
 namespace AgisExchangeTest {
 
 	std::string exchange1_path = "C:\\Users\\natha\\OneDrive\\Desktop\\C++\\AgisCoreTest\\data\\exchange1";
-	std::string exchange_complex_path = "C:\\Users\\natha\\OneDrive\\Desktop\\C++\\Nexus\\AgisCoreTest\\data\\SPY_DAILY\\data.h5";
+	std::string exchange_complex_path = "C:\\Users\\natha\\OneDrive\\Desktop\\C++\\AgisCore\\AgisCoreTest\\data\\SPY_DAILY.h5";
 
 	std::string asset_id_1 = "test1";
 	std::string asset_id_2 = "test2";
@@ -37,6 +37,16 @@ namespace AgisExchangeTest {
 
 using namespace AgisExchangeTest;
 
+class ComplexExchangeTests : public ::testing::Test
+{
+protected:
+	std::shared_ptr<Hydra> hydra;
+	void SetUp() override
+	{
+		hydra = std::make_shared<Hydra>();
+
+	}
+};
 
 class SimpleExchangeTests : public ::testing::Test
 {
@@ -76,6 +86,24 @@ protected:
 	}
 };
 
+
+TEST_F(ComplexExchangeTests, TestH5Load)
+{
+	auto res = hydra->create_exchange(
+		exchange_id_complex,
+		dt_format,
+		exchange_complex_path
+	);
+	EXPECT_TRUE(res.has_value());
+	auto& exchanges = hydra->get_exchanges();
+	hydra->build();
+	hydra->step();
+	EXPECT_DOUBLE_EQ(exchanges.get_market_price("AAPL", false).value(), 7.62249994277954102);
+	EXPECT_DOUBLE_EQ(exchanges.get_market_price("AAPL", true).value(), 7.64321422576904297);
+	hydra->step();
+	EXPECT_DOUBLE_EQ(exchanges.get_market_price("AAPL", false).value(), 7.66428613662719727);
+	EXPECT_DOUBLE_EQ(exchanges.get_market_price("AAPL", true).value(), 7.65642881393432617);
+}
 
 
 TEST_F(SimpleExchangeTests, ExchangeCreate) {

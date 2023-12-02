@@ -45,7 +45,7 @@ private:
 		std::string source
 	);
 	static void destroy(Exchange* exchange) noexcept;
-
+	std::expected<bool, AgisException> load_h5() noexcept;
 	std::expected<bool, AgisException> load_folder() noexcept;
 	std::expected<bool, AgisException> load_assets() noexcept;
 	[[nodiscard]] std::expected<bool, AgisException> step(long long global_dt) noexcept;
