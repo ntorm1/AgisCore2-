@@ -78,6 +78,7 @@ public:
 	Exchange(Exchange const&) = delete;
 	Exchange& operator=(Exchange const&) = delete;
 	size_t get_exchange_index() const noexcept;
+	auto const& symbols() const noexcept { return _symbols; }
 	std::optional<size_t> get_column_index(std::string const& column) const noexcept;
 	long long get_dt() const noexcept;
 	std::string const& get_exchange_id() const noexcept;

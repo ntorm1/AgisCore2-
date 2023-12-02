@@ -42,6 +42,20 @@ serialize_exchange(
 	
 	rapidjson::Value v_dt_format(dt_format.c_str(), allocator);
 	j.AddMember("dt_format", v_dt_format.Move(), allocator);
+
+	// save symbol init list if it exists
+	if (exchange.symbols())
+	{
+		auto const& symbs_vec = *exchange.symbols();
+		rapidjson::Document symbols_json(rapidjson::kArrayType);
+		for (auto const& symb : symbs_vec)
+		{
+			rapidjson::Value v_symb(symb.c_str(), allocator);
+			symbols_json.PushBack(v_symb.Move(), allocator);
+		}
+		j.AddMember("symbols", std::move(symbols_json), allocator);
+	}
+
 	return j;
 }
 
@@ -147,7 +161,25 @@ deserialize_exchange_map(rapidjson::Document const& json, Hydra* hydra)
 		auto exchange_id = exchange.name.GetString();
 		auto source = exchange.value["source_dir"].GetString();
 		auto dt_format = exchange.value["dt_format"].GetString();
-		auto res = hydra->create_exchange(exchange_id, dt_format, source);
+
+		// load in init symbol list if it exists
+		std::optional<std::vector<std::string>> _symbols;
+		if (exchange.value.HasMember("symbols"))
+		{
+			auto& symbols = exchange.value["symbols"];
+			if (!symbols.IsArray())
+			{
+				return std::unexpected(AgisException("expected symbols to be array"));
+			}
+			std::vector<std::string> symbols_vec;
+			for (auto& symbol : symbols.GetArray())
+			{
+				symbols_vec.push_back(symbol.GetString());
+			}
+			_symbols = symbols_vec;
+		}
+
+		auto res = hydra->create_exchange(exchange_id, dt_format, source, _symbols);
 		if (!res)
 		{
 			return std::unexpected(res.error());
@@ -181,6 +213,7 @@ SerializeResult serialize_hydra(
 	Hydra const& hydra,
 	std::optional<std::string> out_path)
 {
+	auto lock = hydra.__aquire_read_lock();
 	rapidjson::Value j(rapidjson::kObjectType);
 	auto exchange_map_json = serialize_exchange_map(allocator, hydra.get_exchanges());
 	auto master_portfolio_json = serialize_portfolio(allocator, *(hydra.get_portfolio("master").value()));
