@@ -92,16 +92,19 @@ deserialize_portfolio(
 	{
 		return std::unexpected(AgisException("Json file does not have portfolio_id"));
 	}
-	auto portfolio_id = json["portfolio_id"].GetString();
+	std::string portfolio_id = json["portfolio_id"].GetString();
 	if (!json.HasMember("exchange_id"))
 	{
 		return std::unexpected(AgisException("Json file does not have exchange_id"));
 	}
 	auto exchange_id = json["exchange_id"].GetString();
-	auto res = hydra->create_portfolio(portfolio_id, exchange_id, parent_portfolio);
-	if (!res)
-	{
-		return std::unexpected(res.error());
+	std::expected<Portfolio*, AgisException> res;
+	if (portfolio_id != "master") {
+		res = hydra->create_portfolio(portfolio_id, exchange_id, parent_portfolio);
+		if (!res)
+		{
+			return std::unexpected(res.error());
+		}
 	}
 	// if serailized portfolio has child portfolio build them and pass pointer to the 
 	// previously created portfolio

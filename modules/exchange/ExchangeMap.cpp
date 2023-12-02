@@ -50,7 +50,10 @@ struct ExchangeMapPrivate
 
 //============================================================================
 std::expected<Exchange const*, AgisException>
-ExchangeMap::create_exchange(std::string exchange_id, std::string dt_format, std::string source)
+ExchangeMap::create_exchange(
+	std::string exchange_id,
+	std::string dt_format,
+	std::string source)
 {
 	// check if exchange already exists
 	if (_p->exchange_indecies.find(exchange_id) != _p->exchange_indecies.end())
