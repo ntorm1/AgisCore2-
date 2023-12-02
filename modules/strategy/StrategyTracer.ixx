@@ -10,7 +10,6 @@ module;
 export module StrategyTracerModule;
 
 import <vector>;
-import <atomic>;
 import <optional>;
 import <bitset>;
 import <expected>;

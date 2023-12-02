@@ -55,16 +55,33 @@ std::expected<bool, AgisException> deserialize_exchange_map(
 	Hydra* hydra
 );
 
+
 //============================================================================
 rapidjson::Document serialize_exchange_map(
 	rapidjson::Document::AllocatorType& allocator,
 	ExchangeMap const& exchange_map
 );
 
+
 //============================================================================
 rapidjson::Document serialize_exchange(
 	rapidjson::Document::AllocatorType& allocator,
 	Exchange const& exchange
+);
+
+
+//============================================================================
+rapidjson::Document serialize_portfolio(
+	rapidjson::Document::AllocatorType& allocator,
+	Portfolio const& portfolio
+);
+
+
+//============================================================================
+std::expected<bool, AgisException> deserialize_portfolio(
+	rapidjson::Value const& json,
+	Hydra* hydra,
+	std::optional<Portfolio*> parent_portfolio = std::nullopt
 );
 
 }

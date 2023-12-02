@@ -164,7 +164,6 @@ Hydra::reset() noexcept
 std::optional<Strategy const*>
 Hydra::get_strategy(std::string const& strategy_id) const noexcept
 {
-	auto lock = std::shared_lock(_mutex);
 	return get_strategy_mut(strategy_id);
 }
 
@@ -181,14 +180,21 @@ Hydra::get_strategy_mut(std::string const& strategy_id) const noexcept
 
 
 //============================================================================
-std::optional<Portfolio const*>
-Hydra::get_portfolio(std::string const& portfolio_id) const noexcept
+std::optional<Portfolio*>
+Hydra::get_portfolio_mut(std::string const& portfolio_id) const noexcept
 {
 	auto lock = std::shared_lock(_mutex);
-	if(portfolio_id == "master") return &_p->master_portfolio;
+	if (portfolio_id == "master") return &_p->master_portfolio;
 	auto it = _p->portfolios.find(portfolio_id);
 	if (it == _p->portfolios.end()) return std::nullopt;
 	return it->second;
+}
+
+//============================================================================
+std::optional<Portfolio const*>
+Hydra::get_portfolio(std::string const& portfolio_id) const noexcept
+{
+	return get_portfolio_mut(portfolio_id);
 }
 
 //============================================================================

@@ -63,6 +63,7 @@ public:
 	AGIS_API [[nodiscard]] std::optional<Strategy const*> get_strategy(std::string const& strategy_id) const noexcept;
 	AGIS_API [[nodiscard]] std::optional<Strategy*> get_strategy_mut(std::string const& strategy_id) const noexcept;
 	AGIS_API [[nodiscard]] std::optional<Portfolio const*> get_portfolio(std::string const& portfolio_id) const noexcept;
+	AGIS_API [[nodiscard]] std::optional<Portfolio*> get_portfolio_mut(std::string const& portfolio_id) const noexcept;
 	AGIS_API [[nodiscard]] ExchangeMap const& get_exchanges() const noexcept;
 	AGIS_API [[nodiscard]] std::optional<Exchange const*> get_exchange(std::string const& exchange_id) const noexcept;
 	AGIS_API [[nodiscard]] std::optional<Exchange*> get_exchange_mut(std::string const& exchange_id) const noexcept;

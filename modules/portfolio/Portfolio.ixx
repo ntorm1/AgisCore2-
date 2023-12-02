@@ -11,7 +11,6 @@ module;
 
 export module PortfolioModule;
 
-
 import <optional>;
 import <expected>;
 import <shared_mutex>;
@@ -36,9 +35,9 @@ private:
 	bool _step_call = false;
 	std::string _portfolio_id;
 
-	ankerl::unordered_dense::map<size_t, std::unique_ptr<Position>>		_positions;
-	ankerl::unordered_dense::map<size_t, std::unique_ptr<Portfolio>>	_child_portfolios;
-	ankerl::unordered_dense::map<size_t, std::unique_ptr<Strategy>>		_strategies;
+	ankerl::unordered_dense::map<size_t, UniquePtr<Position>>		_positions;
+	ankerl::unordered_dense::map<size_t, UniquePtr<Portfolio>>	_child_portfolios;
+	ankerl::unordered_dense::map<size_t, UniquePtr<Strategy>>		_strategies;
 
 	tbb::task_group&			_task_group;
 	std::optional<Portfolio*>	_parent_portfolio;
@@ -46,8 +45,8 @@ private:
 	std::optional<Exchange*>		_exchange = std::nullopt;
 
 	std::vector<Trade*>						_trade_history;
-	std::vector<std::unique_ptr<Position>>	_position_history;
-	std::vector<std::unique_ptr<Order>>		_order_history;
+	std::vector<UniquePtr<Position>>	_position_history;
+	std::vector<UniquePtr<Order>>		_order_history;
 
 	StrategyTracers _tracers;
 
@@ -63,10 +62,10 @@ private:
 		std::optional<Exchange*>	exchange,
 		double cash
 	);
-	std::expected<bool, AgisException> add_strategy(std::unique_ptr<Strategy>);
-	void place_order(std::unique_ptr<Order> order) noexcept;
+	std::expected<bool, AgisException> add_strategy(UniquePtr<Strategy>);
+	void place_order(UniquePtr<Order> order) noexcept;
 	void process_filled_order(Order* order);
-	void process_order(std::unique_ptr<Order> order);
+	void process_order(UniquePtr<Order> order);
 
 	void close_position(Order const* order, Position* position) noexcept;
 	void close_trade(size_t asset_index, size_t strategy_index) noexcept;
@@ -77,7 +76,6 @@ private:
 
 	size_t get_asset_count_limit() const noexcept;
 	std::optional<Portfolio*> get_parent_portfolio() const noexcept { return _parent_portfolio;}
-	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }
 	void set_child_portfolio_position_parents(Position* p) noexcept;
 	std::optional<Position*> get_parent_position(size_t asset_index) const noexcept;
 	std::optional<Position*> get_position_mut(size_t asset_index) const noexcept;
@@ -96,12 +94,16 @@ public:
 	
 	AGIS_API size_t get_portfolio_index() const noexcept { return _portfolio_index; }
 	AGIS_API std::optional<Position const*> get_position(std::string const& asset_id) const noexcept;
-
-
-	bool position_exists(size_t asset_index) const noexcept;
-	bool trade_exists(size_t asset_index, size_t strategy_index) const noexcept;
+	AGIS_API std::string get_portfolio_id() const noexcept { return _portfolio_id; }
+	AGIS_API auto const& child_portfolios() const noexcept { return _child_portfolios; }
+	AGIS_API auto const& child_strategies() const noexcept { return _strategies; }
 	AGIS_API double get_cash() const noexcept;
 	AGIS_API double get_nlv() const noexcept;
+
+	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }
+	bool position_exists(size_t asset_index) const noexcept;
+	bool trade_exists(size_t asset_index, size_t strategy_index) const noexcept;
+
 
 };
 
