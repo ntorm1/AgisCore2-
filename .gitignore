@@ -16,6 +16,9 @@
 # Mono auto generated files
 mono_crash.*
 
+# ignore h5 Files
+*.h5
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
