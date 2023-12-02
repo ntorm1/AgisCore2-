@@ -121,7 +121,7 @@ public:
 	);
 
 private:
-	size_t _asset_counter = 0;
+	std::atomic<size_t> _asset_counter = 0;
 	std::string _dt_format;
 	std::string _exchange_id;
 };

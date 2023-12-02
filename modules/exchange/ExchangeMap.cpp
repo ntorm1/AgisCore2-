@@ -18,9 +18,16 @@ std::expected<UniquePtr<Exchange>, AgisException>
 ExchangeFactory::create_exchange(
 		std::string exchange_id,
 		std::string dt_format,
-		std::string source)
+		std::string source,
+		std::optional<std::vector<std::string>> symbols)
 {
-	auto exchange = Exchange::create(exchange_id, dt_format, _exchange_counter, source);
+	auto exchange = Exchange::create(
+		exchange_id,
+		dt_format,
+		_exchange_counter,
+		source,
+		symbols
+	);
 	auto res = exchange->load_assets();
 	if (!res)
 	{
@@ -53,7 +60,8 @@ std::expected<Exchange const*, AgisException>
 ExchangeMap::create_exchange(
 	std::string exchange_id,
 	std::string dt_format,
-	std::string source)
+	std::string source,
+	std::optional<std::vector<std::string>> symbols)
 {
 	// check if exchange already exists
 	if (_p->exchange_indecies.find(exchange_id) != _p->exchange_indecies.end())
@@ -62,7 +70,9 @@ ExchangeMap::create_exchange(
 	}  
 
 	// create the new exchange and copy over asset pointers
-	AGIS_ASSIGN_OR_RETURN(exchange, _p->factory.create_exchange(exchange_id, dt_format, source));
+	AGIS_ASSIGN_OR_RETURN(exchange, _p->factory.create_exchange(
+		exchange_id, dt_format, source, symbols)
+	);
 	auto& exchange_assets = exchange->get_assets();
 	for (auto& asset : exchange_assets)
 	{

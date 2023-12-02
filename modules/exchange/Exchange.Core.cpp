@@ -85,10 +85,12 @@ Exchange::Exchange(
 	std::string exchange_id,
 	size_t exchange_index,
 	std::string dt_format,
-	std::string source
+	std::string source,
+	std::optional<std::vector<std::string>> symbols
 ) noexcept
 {
 	_source = source;
+	_symbols = symbols;
 	_p = new ExchangePrivate(exchange_id, exchange_index, dt_format);
 }
 
@@ -105,6 +107,10 @@ std::expected<bool, AgisException> Exchange::load_folder() noexcept
 	{
 		// get file name minus the extension
 		auto file_name = file.path().stem().string();
+		if (_symbols && std::find(_symbols.value().begin(), _symbols.value().end(), file_name) == _symbols.value().end())
+		{
+			continue;
+		}
 		AGIS_ASSIGN_OR_RETURN(asset, _p->asset_factory->create_asset(file_name, file.path().string()));
 		_p->assets.push_back(std::move(asset));
 	}
@@ -123,6 +129,10 @@ Exchange::load_h5() noexcept
 	{
 		try {
 			std::string asset_id = file.getObjnameByIdx(i);
+			if (_symbols && std::find(_symbols.value().begin(), _symbols.value().end(), asset_id) == _symbols.value().end())
+			{
+				continue;
+			}
 			H5::DataSet dataset = file.openDataSet(asset_id + "/data");
 			H5::DataSpace dataspace = dataset.getSpace();
 			H5::DataSet datasetIndex = file.openDataSet(asset_id + "/datetime");
@@ -448,9 +458,10 @@ Exchange::create(
 	std::string exchange_name,
 	std::string dt_format,
 	size_t exchange_index,
-	std::string source)
+	std::string source,
+	std::optional<std::vector<std::string>> symbols)
 {
-	return std::make_unique<Exchange>(exchange_name, exchange_index, dt_format, source);
+	return std::make_unique<Exchange>(exchange_name, exchange_index, dt_format, source, symbols);
 }
 
 

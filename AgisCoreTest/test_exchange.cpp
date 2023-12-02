@@ -89,10 +89,12 @@ protected:
 
 TEST_F(ComplexExchangeTests, TestH5Load)
 {
+	std::vector<std::string> asset_ids = { "AAPL", "MSFT", "AMZN"};
 	auto res = hydra->create_exchange(
 		exchange_id_complex,
 		dt_format,
-		exchange_complex_path
+		exchange_complex_path,
+		asset_ids
 	);
 	EXPECT_TRUE(res.has_value());
 	auto& exchanges = hydra->get_exchanges();

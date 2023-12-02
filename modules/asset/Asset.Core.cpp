@@ -349,9 +349,8 @@ AssetFactory::create_asset(
 		AGIS_ASSIGN_OR_RETURN(res, asset->load_csv(source, _dt_format));
 		break;
 	}
-	auto m = std::make_unique<Asset>(asset, asset_name, _asset_counter);
+	auto m = std::make_unique<Asset>(asset, asset_name, _asset_counter++);
 	m->_dt_format = _dt_format;
-	_asset_counter++;
 	return m;
 }
 
@@ -368,9 +367,8 @@ AssetFactory::create_asset(
 {
 	auto asset = new AssetPrivate();
 	AGIS_ASSIGN_OR_RETURN(res, asset->load_h5(dataset, dataspace, datasetIndex, dataspaceIndex));
-	auto m = std::make_unique<Asset>(asset, asset_name, _asset_counter);
+	auto m = std::make_unique<Asset>(asset, asset_name, _asset_counter++);
 	m->_dt_format = _dt_format;
-	_asset_counter++;
 	return m;
 }
 

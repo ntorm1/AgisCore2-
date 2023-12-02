@@ -32,7 +32,7 @@ private:
 	std::string _source;
 	ExchangePrivate* _p;
 	size_t _index_offset = 0;
-	
+	std::optional<std::vector<std::string>> _symbols;
 	/// <summary>
 	/// Mapping between portfolio child index and child portfolio
 	/// </summary>
@@ -42,7 +42,8 @@ private:
 		std::string exchange_name,
 		std::string dt_format,
 		size_t exchange_index,
-		std::string source
+		std::string source,
+		std::optional<std::vector<std::string>> symbols
 	);
 	static void destroy(Exchange* exchange) noexcept;
 	std::expected<bool, AgisException> load_h5() noexcept;
@@ -68,7 +69,8 @@ public:
 		std::string exchange_id,
 		size_t exchange_index,
 		std::string dt_format,
-		std::string source
+		std::string source,
+		std::optional<std::vector<std::string>> symbols
 	) noexcept;
 
 	AGIS_API ~Exchange();

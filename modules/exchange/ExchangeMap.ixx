@@ -34,7 +34,8 @@ private:
 	[[nodiscard]] std::expected<UniquePtr<Exchange>, AgisException> create_exchange(
 		std::string exchange_id,
 		std::string dt_format,
-		std::string source
+		std::string source,
+		std::optional<std::vector<std::string>> symbols
 	);
 
 
@@ -53,7 +54,8 @@ private:
 	[[nodiscard]] std::expected<Exchange const*, AgisException> create_exchange(
 		std::string exchange_id,
 		std::string dt_format,
-		std::string source
+		std::string source,
+		std::optional<std::vector<std::string>> symbols
 	);
 	std::vector<Asset*> const& get_assets() const noexcept;
 	std::expected<bool, AgisException> force_place_order(Order* order, bool is_close) noexcept;

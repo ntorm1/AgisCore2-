@@ -301,11 +301,15 @@ Hydra::create_portfolio(
 
 //============================================================================
 std::expected<Exchange const*, AgisException>
-Hydra::create_exchange(std::string exchange_id, std::string dt_format, std::string source)
+Hydra::create_exchange(
+	std::string exchange_id,
+	std::string dt_format,
+	std::string source,
+	std::optional<std::vector<std::string>> symbols)
 {
 	auto lock = std::unique_lock(_mutex);
 	_p->built = false;
-	return _p->exchanges.create_exchange(exchange_id, dt_format, source);
+	return _p->exchanges.create_exchange(exchange_id, dt_format, source, symbols);
 }
 
 

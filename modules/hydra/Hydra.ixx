@@ -83,7 +83,8 @@ public:
 	AGIS_API [[nodiscard]] std::expected<Exchange const*, AgisException> create_exchange(
 		std::string exchange_id,
 		std::string dt_format,
-		std::string source
+		std::string source,
+		std::optional<std::vector<std::string>> symbols = std::nullopt
 	);
 
 
