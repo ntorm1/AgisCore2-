@@ -1,5 +1,12 @@
 module;
 
+#pragma once
+#ifdef AGISCORE_EXPORTS
+#define AGIS_API __declspec(dllexport)
+#else
+#define AGIS_API __declspec(dllimport)
+#endif
+
 #include "AgisDeclare.h"
 
 export module AssetObserverModule;
@@ -8,6 +15,7 @@ import <span>;
 import <string>;
 import <variant>;
 import <vector>;
+import <unordered_map>;
 
 import AgisPointersModule;
 
@@ -22,6 +30,9 @@ export enum ObserverType : uint16_t
 	Sum,
 	Correlation
 };
+
+
+extern AGIS_API std::unordered_map<std::string, ObserverType> observer_type_map;
 
 
 //============================================================================

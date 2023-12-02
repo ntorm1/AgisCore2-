@@ -71,6 +71,7 @@ export class AssetObserverNode : public ExpressionNode<double>
 {
 public:
 	AssetObserverNode(AssetObserver* observer);
+	AGIS_API virtual ~AssetObserverNode() = default;
 
 	double evaluate() noexcept override;
 

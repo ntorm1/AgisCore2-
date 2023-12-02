@@ -5,6 +5,17 @@ import AssetModule;
 namespace Agis
 {
 
+
+//============================================================================
+std::unordered_map<std::string, ObserverType> observer_type_map = {
+	{"Read", ObserverType::Read},
+	{"Sum", ObserverType::Sum},
+	{"Variance", ObserverType::Variance},
+	{"Covariance", ObserverType::Covariance},
+	{"Correlation", ObserverType::Correlation}
+};
+
+
 //============================================================================
 AssetObserver::AssetObserver(Asset const& asset, ObserverType t) : _asset(asset), _type(t)
 {

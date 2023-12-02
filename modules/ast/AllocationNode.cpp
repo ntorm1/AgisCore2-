@@ -58,7 +58,8 @@ AllocationNode::rank_allocation(Eigen::VectorXd& weights)
 		return weights[i1] > weights[i2];
 	});
 	std::vector<double> ranks(weights.size(), 0.0f);
-	double sum = ranks.size() * (ranks.size() + 1) / 2;
+	double size = static_cast<double>(weights.size());
+	double sum = size * (size + 1) / 2;
 	for (size_t i = 0; i < indices.size(); ++i) {
 		ranks[indices[i]] = (static_cast<double>(i) / sum);
 	}
