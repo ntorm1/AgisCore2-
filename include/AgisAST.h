@@ -1,6 +1,13 @@
 #pragma once
-
+#ifdef AGISCORE_EXPORTS
+#define AGIS_API __declspec(dllexport)
+#else
+#define AGIS_API __declspec(dllimport)
+#endif
 #include <cstdint>
+
+#include <string>
+#include <unordered_map>
 
 namespace Agis
 {
@@ -37,7 +44,8 @@ namespace AST
 		ADD,
 		SUBTRACT,
 		MULTIPLY,
-		DIVIDE
+		DIVIDE,
+		COUNT_MAX,
 	};
 
 	class AssetLambdaNode;

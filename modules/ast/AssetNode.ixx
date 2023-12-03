@@ -33,6 +33,9 @@ public:
 	virtual ~AssetLambdaNode() {}
 	size_t get_warmup() const noexcept { return this->_warmup; };
 
+	AGIS_API static std::unordered_map<std::string, AgisOperator> const& AgisOperatorMap();
+
+
 protected:
 	void set_warmup(size_t w) { this->_warmup = w; };
 

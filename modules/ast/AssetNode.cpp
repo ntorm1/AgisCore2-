@@ -1,5 +1,6 @@
 module;
 #include <cmath>
+#include <unordered_map>
 #include "AgisDeclare.h"
 
 module AssetNode;
@@ -18,6 +19,24 @@ namespace Agis
 namespace AST
 {
 
+
+
+
+
+//==================================================================================================
+std::unordered_map<std::string, AgisOperator> const&
+AssetLambdaNode::AgisOperatorMap()
+{
+	static std::unordered_map<std::string, AgisOperator> agis_opp_map = {
+	{"init", AgisOperator::INIT},
+	{"identity", AgisOperator::IDENTITY},
+	{"add", AgisOperator::ADD},
+	{"subtract", AgisOperator::SUBTRACT},
+	{"multiply", AgisOperator::MULTIPLY},
+	{"divide", AgisOperator::DIVIDE}
+	};
+	return agis_opp_map;
+}
 
 //==================================================================================================
 AssetObserverNode::AssetObserverNode(AssetObserver* observer) 
