@@ -94,7 +94,7 @@ public:
 		this->_node = std::make_unique<StrategyNode>(*this, std::move(node), 0.0f);
 	}
 
-	std::expected<bool, AgisException> step() override {
+	std::expected<bool, AgisException> step() noexcept override {
 		return _node->evaluate();
 	}
 

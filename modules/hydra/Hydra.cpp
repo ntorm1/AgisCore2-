@@ -251,6 +251,10 @@ std::expected<bool, AgisException>
 Hydra::register_strategy(std::unique_ptr<Strategy> strategy)
 {
 	auto lock = std::unique_lock(_mutex);
+	if (_p->strategies.count(strategy->get_strategy_id()))
+	{
+		return std::unexpected<AgisException>(AgisException("Strategy already exists"));
+	}
 	_p->strategies[strategy->get_strategy_id()] = strategy.get();
 	auto portfolio = strategy->get_portfolio_mut();
 	return portfolio->add_strategy(std::move(strategy));

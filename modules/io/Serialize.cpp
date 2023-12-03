@@ -120,6 +120,10 @@ deserialize_portfolio(
 			return std::unexpected(res.error());
 		}
 	}
+	else
+	{
+		res = hydra->get_portfolio_mut("master").value();
+	}
 	// if serailized portfolio has child portfolio build them and pass pointer to the 
 	// previously created portfolio
 	if (json.HasMember("child_portfolios"))

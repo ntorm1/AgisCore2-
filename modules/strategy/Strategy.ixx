@@ -67,7 +67,7 @@ protected:
 	
 
 	void reset() noexcept;
-	virtual std::expected<bool,AgisException> step() = 0;
+	virtual std::expected<bool,AgisException> step() noexcept = 0;
 
 public:
 	AGIS_API std::optional<Trade const*> get_trade(size_t asset_index) const noexcept;

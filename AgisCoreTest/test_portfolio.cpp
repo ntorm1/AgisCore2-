@@ -48,7 +48,7 @@ public:
 		Portfolio& portfolio
 	) : Strategy(strategy_id, cash, exchange, portfolio) {}
 
-	std::expected<bool, AgisException> step() override {
+	std::expected<bool, AgisException> step() noexcept override {
 		return true;
 	}
 	void place_market_order(std::string const& asset_id, double units) {
