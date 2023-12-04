@@ -37,6 +37,29 @@ AllocationNode::~AllocationNode()
 
 
 //==================================================================================================
+std::unordered_map<std::string, AllocType> const&
+AllocationNode::AllocTypeMap()
+{
+	static std::unordered_map<std::string, AllocType> alloc_type_map = {
+		{"uniform", AllocType::UNIFORM},
+		{"rank", AllocType::RANK}
+	};
+	return alloc_type_map;
+}
+
+
+//==================================================================================================
+AGIS_API std::optional<std::string> AllocationNode::AllocTypeToString(AllocType type)
+{
+	if (type == AllocType::UNIFORM)
+		return "uniform";
+	if (type == AllocType::RANK)
+		return "rank";
+	return std::nullopt;
+}
+
+
+//==================================================================================================
 std::expected<Eigen::VectorXd*, AgisException>
 AllocationNode::evaluate() noexcept
 {

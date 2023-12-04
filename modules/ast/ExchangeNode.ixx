@@ -102,10 +102,12 @@ public:
 		_N = (n == -1) ? exchange_view_node->size() : static_cast<size_t>(n);
 	}
 	AGIS_API virtual ~ExchangeViewSortNode();
-
+	AGIS_API static std::unordered_map<std::string, ExchangeQueryType> const& ExchangeQueryTypeMap();
 	AGIS_API std::expected<Eigen::VectorXd*, AgisException>  evaluate() noexcept override;
 	size_t get_warmup() const { return _exchange_view_node->get_warmup(); }
 	size_t view_size() const noexcept { return _view.size(); }
+
+
 private:
 	void sort(size_t count, ExchangeQueryType type);
 

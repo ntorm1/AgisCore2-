@@ -91,6 +91,19 @@ ExchangeViewNode::evaluate() noexcept
 
 
 //==================================================================================================
+std::unordered_map<std::string, ExchangeQueryType> const&
+ExchangeViewSortNode::ExchangeQueryTypeMap()
+{
+	static std::unordered_map<std::string, ExchangeQueryType> const map = {
+		{ "Default", ExchangeQueryType::Default },
+		{ "NSmallest", ExchangeQueryType::NSmallest },
+		{ "NLargest", ExchangeQueryType::NLargest },
+		{ "NExtreme", ExchangeQueryType::NExtreme }
+	};
+	return map;
+}
+
+//==================================================================================================
 void
 	ExchangeViewSortNode::sort(size_t N, ExchangeQueryType sort_type) {
 	if (_view.size() <= N) {

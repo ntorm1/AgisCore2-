@@ -49,7 +49,8 @@ public:
 	);
 	
 	AGIS_API virtual ~AllocationNode();
-
+	AGIS_API static std::unordered_map<std::string, AllocType> const& AllocTypeMap();
+	AGIS_API static std::optional<std::string> AllocTypeToString(AllocType type);
 	std::expected<Eigen::VectorXd*, AgisException> evaluate() noexcept override;
 
 private:
@@ -59,7 +60,7 @@ private:
 
 	UniquePtr<ExchangeViewSortNode> _weights_node;
 	AllocParams _alloc_params;
-	double _epsilon;
+	double _epsilon = 0.0f;
 	AllocType _alloc_type;
 };
 

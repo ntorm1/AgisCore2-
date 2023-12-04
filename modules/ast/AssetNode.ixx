@@ -58,8 +58,7 @@ public:
 	}
 
 	AGIS_API virtual ~AssetLambdaReadNode() = default;
-
-	std::optional<double> evaluate(Asset const* asset) const noexcept override;
+	AGIS_API std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
 protected:
 
