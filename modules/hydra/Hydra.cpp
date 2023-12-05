@@ -3,7 +3,6 @@ module;
 #include "AgisMacros.h"
 #include "AgisDeclare.h"
 #include <tbb/task_group.h>
-#include <ankerl/unordered_dense.h>
 
 module HydraModule;
 
@@ -19,8 +18,8 @@ namespace Agis
 struct HydraPrivate
 {
 	ExchangeMap exchanges;
-	ankerl::unordered_dense::map<std::string, Portfolio*> portfolios;
-	ankerl::unordered_dense::map<std::string, Strategy*> strategies;
+	std::unordered_map<std::string, Portfolio*> portfolios;
+	std::unordered_map<std::string, Strategy*> strategies;
 	Portfolio master_portfolio;
 	size_t current_index = 0;
 	tbb::task_group pool;
@@ -203,6 +202,15 @@ Hydra::get_exchanges() const noexcept
 {
 	auto lock = std::shared_lock(_mutex);
 	return _p->exchanges;
+}
+
+
+//============================================================================
+std::unordered_map<std::string, Strategy*> const&
+Hydra::get_strategies() const noexcept
+{
+	auto lock = std::shared_lock(_mutex);
+	return _p->strategies;
 }
 
 

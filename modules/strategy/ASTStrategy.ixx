@@ -25,8 +25,9 @@ public:
 		Exchange const& exchange,
 		Portfolio& portfolio
 	);
+	AGIS_API ~ASTStrategy() = default;
 
-	std::expected<bool, AgisException> step() noexcept override;
+	AGIS_API std::expected<bool, AgisException> step() noexcept override;
 };
 
 }
