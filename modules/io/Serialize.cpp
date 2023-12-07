@@ -18,6 +18,8 @@ import <filesystem>;
 import ExchangeModule;
 import ExchangeMapModule;
 import HydraModule;
+import StrategyModule;
+import ASTStrategyModule;
 import PortfolioModule;
 
 namespace Agis
@@ -77,18 +79,23 @@ serialize_portfolio(rapidjson::Document::AllocatorType& allocator, Portfolio con
 	rapidjson::Value v_exchange_id(exchange_id.c_str(), allocator);
 	j.AddMember("exchange_id", v_exchange_id.Move(), allocator);
 
-	auto& child_portfolios = portfolio.child_portfolios();
-	if (child_portfolios.empty())
-	{
-		return j;
-	}
 	rapidjson::Document child_portfolios_json(rapidjson::kObjectType);
-	for(const auto& [index, child_portfolio] : child_portfolios)
+	rapidjson::Document child_strategy_json_all(rapidjson::kObjectType);
+	for(const auto& [index, child_portfolio] : portfolio.child_portfolios())
 	{
 		auto child_portfolio_json = serialize_portfolio(allocator, *(child_portfolio.get()));
 		rapidjson::Value key(child_portfolio->get_portfolio_id().c_str(), allocator);
 		child_portfolios_json.AddMember(key.Move(), std::move(child_portfolio_json), allocator);
 	}
+	for (const auto& [index, child_strategy] : portfolio.child_strategies())
+	{
+		rapidjson::Document child_strategy_json(rapidjson::kObjectType);
+		child_strategy->serialize_base(child_strategy_json, allocator);
+		child_strategy->serialize(child_strategy_json, allocator);
+		rapidjson::Value key(child_strategy->get_strategy_id().c_str(), allocator);
+		child_strategy_json_all.AddMember(key.Move(), std::move(child_strategy_json), allocator);
+	}
+	j.AddMember("child_strategies", std::move(child_strategy_json_all), allocator);
 	j.AddMember("child_portfolios", std::move(child_portfolios_json), allocator);
 	return j;
 }
@@ -143,6 +150,17 @@ deserialize_portfolio(
 			}
 		}
 	}
+	if (!json.HasMember("child_strategies"))
+	{
+		return std::unexpected(AgisException("Json file does not have child_strategies"));
+	}
+	auto& child_strategies = json["child_strategies"];
+	for (auto& child_strategy : child_strategies.GetObject())
+	{
+		auto const& child_json = child_strategy.value;
+		AGIS_ASSIGN_OR_RETURN(strategy, deserialize_strategy(child_json, hydra));
+		AGIS_ASSIGN_OR_RETURN(v, hydra->register_strategy(std::move(strategy)));
+	}
 	return true;
 }
 
@@ -190,6 +208,27 @@ deserialize_exchange_map(rapidjson::Document const& json, Hydra* hydra)
 		}
 	}
 	return true;
+}
+
+
+//============================================================================
+std::expected<UniquePtr<Strategy>, AgisException> 
+deserialize_strategy(rapidjson::Value const& json, Hydra* hydra)
+{
+	if (
+		!json.HasMember("strategy_id") ||
+		!json.HasMember("portfolio_id")||
+		!json.HasMember("exchange_id") ||
+		!json.HasMember("graph_file_path")
+		)
+	{
+		return std::unexpected(AgisException("strategy json file missing information"));
+	}
+	AGIS_OPTIONAL_REF(exchange, hydra->get_exchange(json["exchange_id"].GetString()));
+	AGIS_OPTIONAL_REF(portfolio, hydra->get_portfolio_mut(json["portfolio_id"].GetString()));
+	auto strategy_id = json["strategy_id"].GetString();
+	auto graph_file_path = json["graph_file_path"].GetString();
+	return std::make_unique<ASTStrategy>(strategy_id, 0.0, *exchange, *portfolio, graph_file_path);
 }
 
 

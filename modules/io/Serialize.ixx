@@ -76,12 +76,18 @@ rapidjson::Document serialize_portfolio(
 	Portfolio const& portfolio
 );
 
+//============================================================================
+std::expected<bool, AgisException> deserialize_exchange_map(
+	rapidjson::Document const& json,
+	Hydra* hydra
+);
+
+
 
 //============================================================================
-std::expected<bool, AgisException> deserialize_portfolio(
+std::expected<UniquePtr<Strategy>, AgisException> deserialize_strategy(
 	rapidjson::Value const& json,
-	Hydra* hydra,
-	std::optional<Portfolio*> parent_portfolio = std::nullopt
+	Hydra* hydra
 );
 
 }

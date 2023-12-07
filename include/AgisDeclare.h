@@ -26,5 +26,6 @@ namespace Agis
 	class Position;
 	class Trade;
 	class Strategy;
+	class ASTStrategy;
 	class StrategyPrivate;
 }

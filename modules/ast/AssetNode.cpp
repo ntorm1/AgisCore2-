@@ -19,10 +19,6 @@ namespace Agis
 namespace AST
 {
 
-
-
-
-
 //==================================================================================================
 std::unordered_map<std::string, AgisOperator> const&
 AssetLambdaNode::AgisOperatorMap()

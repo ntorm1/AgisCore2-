@@ -94,7 +94,7 @@ public:
 	
 	AGIS_API size_t get_portfolio_index() const noexcept { return _portfolio_index; }
 	AGIS_API std::optional<Position const*> get_position(std::string const& asset_id) const noexcept;
-	AGIS_API std::string get_portfolio_id() const noexcept { return _portfolio_id; }
+	AGIS_API std::string const& get_portfolio_id() const noexcept { return _portfolio_id; }
 	AGIS_API auto const& child_portfolios() const noexcept { return _child_portfolios; }
 	AGIS_API auto const& child_strategies() const noexcept { return _strategies; }
 	AGIS_API double get_cash() const noexcept;

@@ -3,6 +3,8 @@ module;
 #include "AgisDeclare.h"
 #include "AgisMacros.h"
 
+#include <rapidjson/allocators.h>
+#include <rapidjson/document.h>
 #include <Eigen/Dense>
 #include <ankerl/unordered_dense.h>
 
@@ -188,6 +190,31 @@ Strategy::set_allocation(Eigen::VectorXd& nlvs)
 
 	}
 	return true;
+}
+
+
+//============================================================================
+void
+Strategy::serialize_base(rapidjson::Document& j, rapidjson::Document::AllocatorType& allocator) const noexcept
+{
+	rapidjson::Value v_id(_strategy_id.c_str(), allocator);
+	j.AddMember("strategy_id", v_id.Move(), allocator);
+
+	rapidjson::Value v_exchange_id(_exchange.get_exchange_id().c_str(), allocator);
+	j.AddMember("exchange_id", v_exchange_id.Move(), allocator);
+
+	rapidjson::Value v_portfolio_id(_p->portfolio.get_portfolio_id().c_str(), allocator);
+	j.AddMember("portfolio_id", v_portfolio_id.Move(), allocator);
+
+	j.AddMember("starting_cash", _tracers.starting_cash.load(), allocator);
+}
+
+
+//============================================================================
+std::string const&
+Strategy::get_exchange_id() const noexcept
+{
+	return _exchange.get_exchange_id();
 }
 
 

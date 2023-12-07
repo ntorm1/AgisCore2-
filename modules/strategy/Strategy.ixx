@@ -6,6 +6,8 @@ module;
 #define AGIS_API __declspec(dllimport)
 #endif
 #include <Eigen/Dense>
+#include <rapidjson/allocators.h>
+#include <rapidjson/document.h>
 #include "AgisDeclare.h"
 #include "AgisAST.h"
 
@@ -13,6 +15,7 @@ export module StrategyModule;
 
 import AgisError;
 import StrategyTracerModule;
+
 
 namespace Agis
 {
@@ -44,6 +47,7 @@ private:
 	size_t get_asset_count_limit() const noexcept;
 	size_t get_exchange_offset() const noexcept;
 	Portfolio* get_portfolio_mut() const noexcept;
+	std::optional<Trade*> get_trade_mut(size_t asset_index) const noexcept;
 	inline Eigen::VectorXd const& get_weights() { return _tracers._weights; }
 
 protected:
@@ -60,21 +64,28 @@ protected:
 		bool clear_missing = true
 	) noexcept;
 
-	std::optional<Trade*> get_trade_mut(size_t asset_index) const noexcept;
 	AGIS_API void place_market_order(size_t asset_index, double units);
 	AGIS_API size_t get_strategy_index() const noexcept;
 	AGIS_API std::optional<size_t> get_asset_index(std::string const& asset_id);
 	
-
 	void reset() noexcept;
 	virtual std::expected<bool,AgisException> step() noexcept = 0;
 
 public:
+	virtual void serialize(
+		rapidjson::Document& document,
+		rapidjson::Document::AllocatorType& allocator
+	) const noexcept {}
+	void serialize_base(
+		rapidjson::Document& document,
+		rapidjson::Document::AllocatorType& allocator
+	) const noexcept;
 	AGIS_API std::optional<Trade const*> get_trade(size_t asset_index) const noexcept;
 	AGIS_API double get_cash() const noexcept;
 	AGIS_API double get_nlv() const noexcept;
 	AGIS_API size_t get_strategy_index();
 	AGIS_API std::string const& get_strategy_id() const noexcept{ return _strategy_id; }
+	AGIS_API std::string const& get_exchange_id() const noexcept;
 
 };
 
