@@ -7,7 +7,7 @@ module;
 
 module StrategyNode;
 
-import StrategyModule;
+import ASTStrategyModule;
 import AllocationNode;
 
 namespace Agis
@@ -18,7 +18,7 @@ namespace AST
 
 
 //==================================================================================================
-StrategyNode::StrategyNode(Strategy& strategy, UniquePtr<AllocationNode> alloc_node, double epsilon)
+StrategyNode::StrategyNode(Agis::ASTStrategy& strategy, UniquePtr<AllocationNode> alloc_node, double epsilon)
 	:	ExpressionNode(NodeType::Strategy),
 		_strategy(strategy),
 		_alloc_node(std::move(alloc_node)),

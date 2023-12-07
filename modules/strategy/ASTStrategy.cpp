@@ -1,5 +1,7 @@
 module;
+#include "AgisMacros.h"
 #include "AgisDeclare.h"
+#include <Eigen/Dense>
 #include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
 module ASTStrategyModule;
@@ -22,7 +24,15 @@ ASTStrategy::ASTStrategy(
 //============================================================================
 std::expected<bool, AgisException> ASTStrategy::step() noexcept
 {
-	return true;
+	if (!_alloc_node) return true;
+	AGIS_ASSIGN_OR_RETURN(weights_ptr, _alloc_node->evaluate());
+
+	Eigen::VectorXd const& current_weights = get_weights();
+	Eigen::VectorXd& weights = *weights_ptr;
+
+	weights -= current_weights;
+	weights = (weights.array().abs() < _epsilon).select(0.0, weights);
+	return set_allocation(weights);
 }
 
 

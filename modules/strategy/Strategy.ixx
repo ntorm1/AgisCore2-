@@ -39,7 +39,6 @@ private:
 	
 	void add_trade(Trade const* trade);
 	void remove_trade(size_t asset_index);
-	[[nodiscard]] std::expected<bool, AgisException> set_allocation(Eigen::VectorXd& weights);
 
 	Eigen::VectorXd const& get_weights() const noexcept;
 	bool has_exception() const noexcept { return _exception.has_value(); }
@@ -48,7 +47,6 @@ private:
 	size_t get_exchange_offset() const noexcept;
 	Portfolio* get_portfolio_mut() const noexcept;
 	std::optional<Trade*> get_trade_mut(size_t asset_index) const noexcept;
-	inline Eigen::VectorXd const& get_weights() { return _tracers._weights; }
 
 protected:
 	AGIS_API Strategy(
@@ -63,6 +61,7 @@ protected:
 		double epsilon,
 		bool clear_missing = true
 	) noexcept;
+	[[nodiscard]] std::expected<bool, AgisException> set_allocation(Eigen::VectorXd& weights) noexcept;
 
 	AGIS_API void place_market_order(size_t asset_index, double units);
 	AGIS_API size_t get_strategy_index() const noexcept;
@@ -70,6 +69,7 @@ protected:
 	
 	void reset() noexcept;
 	virtual std::expected<bool,AgisException> step() noexcept = 0;
+	inline Eigen::VectorXd const& get_weights() { return _tracers._weights; }
 
 public:
 	virtual void serialize(

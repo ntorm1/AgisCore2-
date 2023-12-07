@@ -12,6 +12,7 @@ module;
 
 export module ASTStrategyModule;
 
+import AllocationNode;
 import StrategyModule;
 
 namespace Agis
@@ -34,10 +35,14 @@ public:
 		rapidjson::Document& document,
 		rapidjson::Document::AllocatorType& allocator
 	) const noexcept override;
+	void set_alloc_node(UniquePtr<AST::AllocationNode> alloc_node) noexcept { _alloc_node = std::move(alloc_node); }
+	void set_epsilon(double epsilon) noexcept { _epsilon = epsilon; }
 	std::string const& graph_file_path() const noexcept { return _graph_file_path; }
 
 private:
 	std::string _graph_file_path;
+	UniquePtr<AST::AllocationNode> _alloc_node = nullptr;
+	double _epsilon = 0.0;
 
 };
 

@@ -161,7 +161,7 @@ Strategy::set_allocation(
 
 //============================================================================
 std::expected<bool, AgisException>
-Strategy::set_allocation(Eigen::VectorXd& nlvs)
+Strategy::set_allocation(Eigen::VectorXd& nlvs) noexcept
 {
 	size_t exchange_offset = _exchange.get_index_offset();
 	double nlv = this->get_nlv();
