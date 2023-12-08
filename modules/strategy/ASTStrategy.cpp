@@ -24,7 +24,10 @@ ASTStrategy::ASTStrategy(
 //============================================================================
 std::expected<bool, AgisException> ASTStrategy::step() noexcept
 {
-	if (!_alloc_node) return true;
+	if (!_alloc_node)
+	{
+		return std::unexpected(AgisException("ASTStrategy::step() called without an allocation node"));
+	}
 	AGIS_ASSIGN_OR_RETURN(weights_ptr, _alloc_node->evaluate());
 
 	Eigen::VectorXd const& current_weights = get_weights();

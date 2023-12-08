@@ -219,7 +219,8 @@ deserialize_strategy(rapidjson::Value const& json, Hydra* hydra)
 		!json.HasMember("strategy_id") ||
 		!json.HasMember("portfolio_id")||
 		!json.HasMember("exchange_id") ||
-		!json.HasMember("graph_file_path")
+		!json.HasMember("graph_file_path") ||
+		!json.HasMember("starting_cash")
 		)
 	{
 		return std::unexpected(AgisException("strategy json file missing information"));
@@ -228,7 +229,10 @@ deserialize_strategy(rapidjson::Value const& json, Hydra* hydra)
 	AGIS_OPTIONAL_REF(portfolio, hydra->get_portfolio_mut(json["portfolio_id"].GetString()));
 	auto strategy_id = json["strategy_id"].GetString();
 	auto graph_file_path = json["graph_file_path"].GetString();
-	return std::make_unique<ASTStrategy>(strategy_id, 0.0, *exchange, *portfolio, graph_file_path);
+	double starting_cash = json["starting_cash"].GetDouble();
+	auto s = std::make_unique<ASTStrategy>(strategy_id, starting_cash, *exchange, *portfolio, graph_file_path);
+	AGIS_ASSIGN_OR_RETURN(res, s->deserialize(json));
+	return std::move(s);
 }
 
 

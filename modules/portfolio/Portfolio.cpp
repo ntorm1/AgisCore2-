@@ -163,7 +163,7 @@ Portfolio::step()
 		for (auto& strategy_pair : _strategies) {
 			auto strategy = strategy_pair.second.get();
 			_task_group.run([strategy]() {
-				if (strategy->has_exception()) {
+				if (strategy->has_exception() || strategy->is_disabled()) {
 					return;
 				}
 				auto res = strategy->step();

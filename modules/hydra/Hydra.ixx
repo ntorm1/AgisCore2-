@@ -76,9 +76,7 @@ public:
 	AGIS_API [[nodiscard]] std::optional<Exchange const*> get_exchange(std::string const& exchange_id) const noexcept;
 	AGIS_API [[nodiscard]] std::optional<Exchange*> get_exchange_mut(std::string const& exchange_id) const noexcept;
 	AGIS_API [[nodiscard]] std::vector<long long> const& get_dt_index() const noexcept;
-
 	AGIS_API [[nodiscard]] bool asset_exists(std::string const& asset_id) const noexcept;
-
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> register_strategy(
 		std::unique_ptr<Strategy> strategy
 	);

@@ -62,6 +62,14 @@ Strategy::Strategy(
 
 
 //============================================================================
+void
+Strategy::set_exception(AgisException&& exception) noexcept
+{
+	_exception = exception; 
+	_is_disabled = true;
+}
+
+//============================================================================
 size_t Strategy::get_asset_count_limit() const noexcept
 {
 	return _exchange.get_assets().size();
@@ -276,10 +284,18 @@ size_t Strategy::get_strategy_index()
 
 
 //============================================================================
+std::string const& Strategy::get_portfolio_id() const noexcept
+{
+	return _p->portfolio.get_portfolio_id();
+}
+
+
+//============================================================================
 void Strategy::reset() noexcept
 {
 	_p->trades.clear();
-	_tracers.reset();
+	_tracers.reset();	
+	_exception = std::nullopt;
 }
 
 

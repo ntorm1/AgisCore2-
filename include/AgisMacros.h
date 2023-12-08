@@ -5,7 +5,7 @@
 #define CONCAT_INNER(a, b) a ## b
 
 #define AGIS_EXCEP(msg) \
-    AgisException(std::string(__FILE__) + ":" + std::to_string(__LINE__) + " - " + msg)
+    Agis::AgisException(std::string(__FILE__) + ":" + std::to_string(__LINE__) + " - " + msg)
 
 #define AGIS_ASSIGN_OR_RETURN(val, function) \
 	auto CONCAT(val, _opt) = function; \

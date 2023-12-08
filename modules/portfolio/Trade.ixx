@@ -60,6 +60,7 @@ public:
     void set_strategy_alloc_touch(bool b) const noexcept { _strategy_alloc_touch = b; }
     Trade(Strategy* strategy, Order const* order, Position* parent_position) noexcept;
     ~Trade() = default;
+    AGIS_API auto const get_strategy() const { return _strategy; }
     AGIS_API size_t get_portfolio_index() const { return _portfolio_index; }
     AGIS_API size_t get_asset_index() const { return _asset_index; }
     AGIS_API size_t get_strategy_index() const { return _strategy_index; }

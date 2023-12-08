@@ -30,6 +30,7 @@ export class Strategy
 	friend class Hydra;
 	friend class AST::StrategyNode;
 private:
+	bool _is_disabled = false;
 	static std::atomic<size_t> _strategy_counter;
 	std::string _strategy_id;
 	StrategyPrivate* _p;
@@ -42,7 +43,7 @@ private:
 
 	Eigen::VectorXd const& get_weights() const noexcept;
 	bool has_exception() const noexcept { return _exception.has_value(); }
-	void set_exception(AgisException&& exception) noexcept { _exception = exception; }
+	void set_exception(AgisException&& exception) noexcept;
 	size_t get_asset_count_limit() const noexcept;
 	size_t get_exchange_offset() const noexcept;
 	Portfolio* get_portfolio_mut() const noexcept;
@@ -76,14 +77,24 @@ public:
 		rapidjson::Document& document,
 		rapidjson::Document::AllocatorType& allocator
 	) const noexcept {}
+	virtual [[nodiscard]] std::expected<bool, AgisException> deserialize(
+		rapidjson::Value const& document
+		) const noexcept {
+		return true;
+	}
 	void serialize_base(
 		rapidjson::Document& document,
 		rapidjson::Document::AllocatorType& allocator
 	) const noexcept;
+
+
+	AGIS_API bool is_disabled() const noexcept { return _is_disabled; }
+	AGIS_API void set_is_disabled(bool is_disabled) noexcept { this->_is_disabled = is_disabled; }
 	AGIS_API std::optional<Trade const*> get_trade(size_t asset_index) const noexcept;
 	AGIS_API double get_cash() const noexcept;
 	AGIS_API double get_nlv() const noexcept;
 	AGIS_API size_t get_strategy_index();
+	AGIS_API std::string const& get_portfolio_id() const noexcept;
 	AGIS_API std::string const& get_strategy_id() const noexcept{ return _strategy_id; }
 	AGIS_API std::string const& get_exchange_id() const noexcept;
 
