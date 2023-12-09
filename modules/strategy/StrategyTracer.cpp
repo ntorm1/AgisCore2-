@@ -60,12 +60,22 @@ std::optional<double> StrategyTracers::get(Tracer tracer) const
 //============================================================================
 void StrategyTracers::reset()
 {
-	this->cash_history.clear();
-	this->nlv_history.clear();
+	std::fill(this->cash_history.begin(), this->cash_history.end(), 0.0);
+	std::fill(this->nlv_history.begin(), this->nlv_history.end(), 0.0);
 
 	this->cash.store(this->starting_cash);
 	this->nlv.store(this->cash.load());
 	this->unrealized_pnl.store(0.0);
+	this->_current_index = 0;
+}
+
+
+//============================================================================
+void
+StrategyTracers::build(size_t n)
+{
+	this->cash_history = std::vector<double>(n, 0.0);
+	this->nlv_history = std::vector<double>(n, 0.0);
 }
 
 
@@ -179,10 +189,9 @@ std::expected<bool, AgisException> StrategyTracers::evaluate(bool is_reprice)
 	{
 		// Note: at this point all trades have been evaluated and the cash balance has been updated
 		// so we only have to observer the values or use them to calculate other values.
-		if (this->has(Tracer::NLV)) this->nlv_history.push_back(
-			this->nlv.load()
-		);
-		if (this->has(Tracer::CASH)) this->cash_history.push_back(this->cash.load());
+		if (this->has(Tracer::NLV)) this->nlv_history[_current_index] = this->nlv.load();
+		if (this->has(Tracer::CASH)) this->cash_history[_current_index] = this->cash.load();
+		_current_index++;
 	}
 
 	if (portfolio)
@@ -196,8 +205,6 @@ std::expected<bool, AgisException> StrategyTracers::evaluate(bool is_reprice)
 			AGIS_ASSIGN_OR_RETURN(res, v->_tracers.evaluate(is_reprice));
 		}
 	}
-
-
 	return true;
 }
 

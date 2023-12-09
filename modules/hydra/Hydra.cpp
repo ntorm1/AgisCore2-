@@ -82,6 +82,15 @@ Hydra::get_global_time() const noexcept
 
 
 //============================================================================
+size_t
+Hydra::get_current_index() const noexcept
+{
+	if (_p->current_index == 0) return 0;
+	return _p->current_index - 1;
+}
+
+
+//============================================================================
 std::expected<bool, AgisException> 
 Hydra::run() noexcept
 {
@@ -123,6 +132,7 @@ Hydra::build() noexcept
 {
 	auto lock = std::unique_lock(_mutex);
 	AGIS_ASSIGN_OR_RETURN(res, _p->exchanges.build());
+	_p->master_portfolio.build(_p->exchanges.get_dt_index().size());
 	_p->built = true;
 	_state = HydraState::BUILT;
 	return true;
@@ -255,7 +265,6 @@ Hydra::get_exchange_mut(std::string const& exchange_id) const noexcept
 std::vector<long long>
 const& Hydra::get_dt_index() const noexcept
 {
-	auto lock = std::shared_lock(_mutex);
 	return _p->exchanges.get_dt_index();
 }
 

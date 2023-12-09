@@ -91,6 +91,22 @@ Portfolio::get_position(std::string const& asset_id) const noexcept
 
 
 //============================================================================
+void
+Portfolio::build(size_t n)
+{
+	_tracers.build(n);
+	for (auto& [index, strategy] : _strategies)
+	{
+		strategy->build(n);
+	}
+	for (auto& [index, portfolio] : _child_portfolios)
+	{
+		portfolio->build(n);
+	}
+}
+
+
+//============================================================================
 void Portfolio::reset()
 {
 	_tracers.reset();

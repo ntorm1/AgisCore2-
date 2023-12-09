@@ -50,6 +50,7 @@ private:
 
 	StrategyTracers _tracers;
 
+	void build(size_t n);
 	void reset();
 	void zero_out();
 	std::expected<bool, AgisException> evaluate(bool on_close, bool is_reprice);

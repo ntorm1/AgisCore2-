@@ -38,6 +38,7 @@ private:
 	std::optional<AgisException> _exception;
 	Exchange const& _exchange;
 	
+	void build(size_t n) {_tracers.build(n); }
 	void add_trade(Trade const* trade);
 	void remove_trade(size_t asset_index);
 

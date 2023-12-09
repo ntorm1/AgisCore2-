@@ -53,7 +53,7 @@ public:
 	AGIS_API [[nodiscard]] HydraState get_state() const noexcept { return _state; }
 	AGIS_API [[nodiscard]] long long get_next_global_time() const noexcept;
 	AGIS_API [[nodiscard]] long long get_global_time() const noexcept;
-
+	AGIS_API [[nodiscard]] size_t get_current_index() const noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> run() noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> run_to(long long dt) noexcept;
 	AGIS_API [[nodiscard]] std::expected<bool, AgisException> build() noexcept;
