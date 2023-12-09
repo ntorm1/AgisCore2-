@@ -78,6 +78,7 @@ ExchangeMap::create_exchange(
 	{
 		_p->assets.push_back(asset.get());
 		_p->asset_indecies.emplace(asset->get_id(), _p->assets.size() - 1);
+		candles += asset->rows();
 	}
 	// set the exchanges index offest. When exchange is indexing into it's asset vector
 	// it will need to subtract this offset from the assets' index to get the correct index for it's vector

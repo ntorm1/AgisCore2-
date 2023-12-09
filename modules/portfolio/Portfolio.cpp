@@ -55,6 +55,21 @@ Portfolio::~Portfolio()
 
 
 //============================================================================
+std::unique_lock<std::shared_mutex>
+Portfolio::__aquire_write_lock() const noexcept
+{
+	return std::unique_lock<std::shared_mutex>(_mutex);
+}
+
+
+//============================================================================
+std::shared_lock<std::shared_mutex> Portfolio::__aquire_read_lock() const noexcept
+{
+	return std::shared_lock<std::shared_mutex>(_mutex);
+}
+
+
+//============================================================================
 std::optional<Position const*>
 Portfolio::get_position(std::string const& asset_id) const noexcept
 {
@@ -305,8 +320,11 @@ void Portfolio::process_order(std::unique_ptr<Order> order)
 	default:
 		break;
 	}
-	auto lock = std::lock_guard(_mutex);
-	_order_history.push_back(std::move(order));
+	if (_tracers.track_orders)
+	{
+		auto lock = std::lock_guard(_mutex);
+		_order_history.push_back(std::move(order));
+	}
 }
 
 

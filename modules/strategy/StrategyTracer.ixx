@@ -55,6 +55,11 @@ public:
     void cash_add_assign(double v) noexcept;
     void nlv_add_assign(double v) noexcept;
     void unrealized_pnl_add_assign(double v) noexcept;
+    const auto& bit_set () const noexcept { return value_; }
+
+    AGIS_API std::optional<Tracer> get_type(std::string const& name) const noexcept;
+    AGIS_API std::optional<std::vector<double> const*> get_column(Tracer t)  const noexcept;
+    AGIS_API static std::unordered_map<std::string, Tracer> const& _tracer_map() noexcept;
 
 protected:
     std::vector<double> nlv_history;
@@ -70,11 +75,11 @@ private:
     inline void allocation_add_assign(size_t i, double v) noexcept { _weights[i- _exchange_offset] += v; }
     Strategy* strategy = nullptr;
     Portfolio* portfolio = nullptr;
+    bool track_orders = false;
     size_t _exchange_offset = 0;
     Eigen::VectorXd _weights;
-    std::bitset<MAX> value_{ 0 };
+    std::bitset<Tracer::MAX> value_{ 0 };
     std::vector<double> beta_history;
-
 };
 
 

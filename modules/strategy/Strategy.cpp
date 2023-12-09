@@ -39,7 +39,7 @@ public:
 	{
 	}
 
-	void place_order(std::unique_ptr<Order> order)
+	inline void place_order(std::unique_ptr<Order> order) const noexcept
 	{
 		portfolio.place_order(std::move(order));
 	}

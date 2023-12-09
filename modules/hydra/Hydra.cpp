@@ -51,6 +51,22 @@ Hydra::~Hydra()
 
 
 //============================================================================
+std::unique_lock<std::shared_mutex>
+Hydra::__aquire_write_lock() const noexcept
+{
+	return std::unique_lock(_mutex);
+}
+
+
+//============================================================================
+std::shared_lock<std::shared_mutex>
+Hydra::__aquire_read_lock() const noexcept
+{
+	return std::shared_lock(_mutex);
+}
+
+
+//============================================================================
 long long
 Hydra::get_next_global_time() const noexcept
 {
@@ -75,8 +91,6 @@ Hydra::run() noexcept
 		AGIS_ASSIGN_OR_RETURN(res, build());
 	}
 	if (_p->current_index == 0) this->reset();
-
-	// lock the mutex
 	_mutex.lock();
 	auto index = _p->exchanges.get_dt_index();
 	for (size_t i = _p->current_index; i < index.size(); ++i)
@@ -155,6 +169,7 @@ Hydra::reset() noexcept
 	_p->exchanges.reset();
 	_p->master_portfolio.reset();
 	_p->current_index = 0;
+	_state = HydraState::BUILT;
 	return true;
 }
 

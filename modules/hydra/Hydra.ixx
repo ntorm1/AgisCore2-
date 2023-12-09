@@ -47,14 +47,8 @@ public:
 	AGIS_API Hydra();
 	AGIS_API ~Hydra();
 
-	AGIS_API auto __aquire_write_lock() const noexcept
-	{
-		return std::unique_lock<std::shared_mutex>{ _mutex };
-	}
-	AGIS_API auto __aquire_read_lock() const noexcept
-	{
-		return std::shared_lock<std::shared_mutex>{ _mutex };
-	}
+	AGIS_API std::unique_lock<std::shared_mutex> __aquire_write_lock() const noexcept;
+	AGIS_API std::shared_lock<std::shared_mutex> __aquire_read_lock() const noexcept;
 	
 	AGIS_API [[nodiscard]] HydraState get_state() const noexcept { return _state; }
 	AGIS_API [[nodiscard]] long long get_next_global_time() const noexcept;

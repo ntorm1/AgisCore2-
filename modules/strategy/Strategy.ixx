@@ -87,7 +87,7 @@ public:
 		rapidjson::Document::AllocatorType& allocator
 	) const noexcept;
 
-
+	AGIS_API auto const& get_tracers() const noexcept { return _tracers; }
 	AGIS_API bool is_disabled() const noexcept { return _is_disabled; }
 	AGIS_API void set_is_disabled(bool is_disabled) noexcept { this->_is_disabled = is_disabled; }
 	AGIS_API std::optional<Trade const*> get_trade(size_t asset_index) const noexcept;

@@ -81,6 +81,7 @@ private:
 	std::optional<Position*> get_position_mut(size_t asset_index) const noexcept;
 	std::optional<Trade*> get_trade_mut(size_t asset_index, size_t strategy_index) const noexcept;
 
+
 public:
 	Portfolio(
 		tbb::task_group& _thread_pool,
@@ -91,14 +92,17 @@ public:
 		double cash
 	);
 	~Portfolio();
+	AGIS_API std::unique_lock<std::shared_mutex> __aquire_write_lock() const noexcept;
+	AGIS_API std::shared_lock<std::shared_mutex> __aquire_read_lock() const noexcept;
 	AGIS_API size_t get_portfolio_index() const noexcept { return _portfolio_index; }
 	AGIS_API std::optional<Position const*> get_position(std::string const& asset_id) const noexcept;
 	AGIS_API std::string const& get_portfolio_id() const noexcept { return _portfolio_id; }
 	AGIS_API auto const& child_portfolios() const noexcept { return _child_portfolios; }
 	AGIS_API auto const& child_strategies() const noexcept { return _strategies; }
-	AGIS_API auto const& positions() const noexcept { return _positions; }
 	AGIS_API double get_cash() const noexcept;
 	AGIS_API double get_nlv() const noexcept;
+	AGIS_API auto const& positions() const noexcept {return _positions;}
+	AGIS_API auto const& get_tracers() const noexcept { return _tracers; }
 
 	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }
 	bool position_exists(size_t asset_index) const noexcept;

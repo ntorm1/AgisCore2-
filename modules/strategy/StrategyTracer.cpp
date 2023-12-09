@@ -125,6 +125,47 @@ void StrategyTracers::unrealized_pnl_add_assign(double v) noexcept
 
 
 //============================================================================
+std::optional<Tracer>
+StrategyTracers::get_type(std::string const& name) const noexcept
+{
+	if (_tracer_map().contains(name))
+	{
+		return _tracer_map().at(name);
+	}
+	return std::nullopt;
+}
+
+
+//============================================================================
+std::optional<std::vector<double>const*>
+StrategyTracers::get_column(Tracer t) const noexcept
+{
+	if (!this->has(t)) return std::nullopt;
+	switch (t)
+	{
+	case Tracer::CASH:
+		return &this->cash_history;
+		break;
+	case Tracer::NLV:
+		return &this->nlv_history;
+		break;
+	}
+	return std::nullopt;
+}
+
+
+//============================================================================
+std::unordered_map<std::string, Tracer> const& StrategyTracers::_tracer_map() noexcept
+{
+	static std::unordered_map<std::string, Tracer> _map = {
+		{"Cash", Tracer::CASH},
+		{"Nlv", Tracer::NLV}
+	};
+	return _map;
+}
+
+
+//============================================================================
 std::expected<bool, AgisException> StrategyTracers::evaluate(bool is_reprice)
 {
 	// at this point weights vector contains the nlv of each trade. To get the strategy 
