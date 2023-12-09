@@ -38,10 +38,6 @@ public:
 			_objects.push_back(std::make_unique<T>());
 		}
 	}
-	~ObjectPool()
-	{
-
-	}
 
 	void reset()
 	{
@@ -86,7 +82,6 @@ public:
 			return std::move(obj);
 		}
 	}
-
 
 	template <typename... Args>
 	T* get(Args&&... args)
