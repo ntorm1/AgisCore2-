@@ -24,24 +24,24 @@ export class Position
 private:
 	static std::atomic<size_t> _position_counter;
     std::optional<Position*> parent_position;
-	Asset const& _asset;
+    Asset const* _asset = nullptr;
     double _units;
-    double _avg_price;
-    double _open_price;
-    double _close_price;
-    double _last_price;
-    double _nlv;
-    double _unrealized_pnl;
-    double _realized_pnl;
+    double _avg_price = 0.0f;
+    double _open_price = 0.0f;
+    double _close_price = 0.0f;
+    double _last_price = 0.0f;
+    double _nlv = 0.0f;
+    double _unrealized_pnl = 0.0f;
+    double _realized_pnl = 0.0f;
 
-    long long _open_time;
-    long long _close_time;
-    size_t _bars_held;
+    long long _open_time = 0;
+    long long _close_time = 0;
+    size_t _bars_held = 0;
 
-    size_t _position_id;
-    size_t _asset_index;
-    size_t _strategy_index;
-    size_t _portfolio_index;
+    size_t _position_id = 0;
+    size_t _asset_index = 0;
+    size_t _strategy_index = 0;
+    size_t _portfolio_index = 0;
 
     /// <summary>
     /// Mapping between strategy id and trade object.
@@ -67,6 +67,21 @@ private:
     std::optional<Trade*> get_trade_mut(size_t strategy_index) const noexcept;
 
 public:
+    // memory pool functions
+    Position();
+    void init(
+        Strategy* strategy,
+        Order const* order,
+        std::optional<Position*> parent_position = std::nullopt
+    ) noexcept;
+    void init(
+        Strategy* strategy,
+        Trade* trade,
+        std::optional<Position*> parent_position = std::nullopt
+    ) noexcept;
+    void reset();
+
+
     Position(
         Strategy* strategy,
         Order const* order,

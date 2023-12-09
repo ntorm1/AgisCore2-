@@ -17,7 +17,7 @@ import OrderModule;
 import ExchangeModule;
 import PortfolioModule;
 import StrategyTracerModule;
-
+import AgisXPool;
 
 namespace Agis
 {
@@ -33,9 +33,9 @@ public:
 	size_t portfolio_index;
 	size_t exchange_index;
 	ankerl::unordered_dense::map<size_t, Trade const*> trades;
-
+	ObjectPool<Order> order_pool;
 	StrategyPrivate(Portfolio& p, size_t index)
-		: strategy_index(index), portfolio(p)
+		: strategy_index(index), portfolio(p), order_pool(1000)
 	{
 	}
 
@@ -95,7 +95,7 @@ Strategy::get_portfolio_mut() const noexcept
 void
 Strategy::place_market_order(size_t asset_index, double units)
 {
-	auto order = std::make_unique<Order>(
+	auto order = _p->order_pool.pop_unique(
 		OrderType::MARKET_ORDER,
 		asset_index,
 		units,

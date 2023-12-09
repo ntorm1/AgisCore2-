@@ -24,12 +24,12 @@ export class StrategyNode
 	: public ExpressionNode<std::expected<bool, AgisException>>
 {
 public:
-	AGIS_API StrategyNode(Agis::ASTStrategy& strategy, UniquePtr<AllocationNode> alloc_node, double epsilon);
+	AGIS_API StrategyNode(Agis::Strategy& strategy, UniquePtr<AllocationNode> alloc_node, double epsilon);
 	AGIS_API virtual ~StrategyNode();
 
 	AGIS_API std::expected<bool, AgisException> evaluate() noexcept override;
 private:
-	Agis::ASTStrategy& _strategy;
+	Agis::Strategy& _strategy;
 	UniquePtr<AllocationNode> _alloc_node;
 	double _epsilon;
 };

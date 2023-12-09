@@ -207,6 +207,7 @@
     <ClCompile Include="modules\standard\AgisFileUtils.ixx" />
     <ClCompile Include="modules\standard\AgisPointers.ixx" />
     <ClCompile Include="modules\standard\AgisTimeUtils.ixx" />
+    <ClCompile Include="modules\standard\AgisXPool.ixx" />
     <ClCompile Include="modules\strategy\ASTStrategy.cpp" />
     <ClCompile Include="modules\strategy\ASTStrategy.ixx" />
     <ClCompile Include="modules\strategy\Strategy.cpp" />

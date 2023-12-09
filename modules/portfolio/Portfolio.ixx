@@ -6,8 +6,9 @@ module;
 #define AGIS_API __declspec(dllimport)
 #endif
 #include <tbb/task_group.h>
-#include "AgisDeclare.h"
 #include <ankerl/unordered_dense.h>
+
+#include "AgisDeclare.h"
 
 export module PortfolioModule;
 
@@ -22,6 +23,8 @@ import StrategyTracerModule;
 namespace Agis
 {
 
+class PortfolioPrivate;
+
 export class Portfolio
 {
 	friend class Hydra;
@@ -30,12 +33,13 @@ export class Portfolio
 	friend class StrategyTracers;
 	friend class StrategyPrivate;
 private:
+	PortfolioPrivate* _p = nullptr;
 	mutable std::shared_mutex _mutex;
 	size_t		_portfolio_index;
 	bool _step_call = false;
 	std::string _portfolio_id;
 
-	ankerl::unordered_dense::map<size_t, UniquePtr<Position>>		_positions;
+	ankerl::unordered_dense::map<size_t, Position*>		_positions;
 	ankerl::unordered_dense::map<size_t, UniquePtr<Portfolio>>	_child_portfolios;
 	ankerl::unordered_dense::map<size_t, UniquePtr<Strategy>>		_strategies;
 
@@ -45,7 +49,6 @@ private:
 	std::optional<Exchange*>	_exchange = std::nullopt;
 
 	std::vector<Trade*>						_trade_history;
-	std::vector<UniquePtr<Position>>	_position_history;
 	std::vector<UniquePtr<Order>>		_order_history;
 
 	StrategyTracers _tracers;

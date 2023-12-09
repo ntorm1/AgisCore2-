@@ -12,12 +12,24 @@ import ExchangeModule;
 import ExchangeMapModule;
 import TradeModule;
 import StrategyModule;
+import AgisXPool;
 
 import <string>;
 
 
 namespace Agis
 {
+
+
+//============================================================================
+class PortfolioPrivate
+{
+public:
+	ObjectPool<Position> position_pool;
+
+	PortfolioPrivate(size_t init_position_pool_size) : position_pool(init_position_pool_size) {}
+	~PortfolioPrivate() {}
+};
 
 
 //============================================================================
@@ -30,6 +42,7 @@ Portfolio::Portfolio(
 	double cash
 ) : _task_group(_task_group), _tracers(this, cash)
 {
+	_p = new PortfolioPrivate(1000);
 	_portfolio_id = id;
 	_portfolio_index = index;
 	if (parent_portfolio)
@@ -86,7 +99,7 @@ Portfolio::get_position(std::string const& asset_id) const noexcept
 	{
 		return std::nullopt;
 	}
-	return it->second.get();
+	return it->second;
 }
 
 
@@ -112,8 +125,8 @@ void Portfolio::reset()
 	_tracers.reset();
 	_trade_history.clear();
 	_order_history.clear();
-	_position_history.clear();
 	_positions.clear();
+	_p->position_pool.reset();
 
 	for (auto& [index, strategy] : _strategies)
 	{
@@ -366,7 +379,6 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 	auto it = _positions.find(asset_index);
 	auto extracted_position = std::move(it->second);
 	_positions.erase(asset_index);
-	_position_history.push_back(std::move(extracted_position));
 }
 
 
@@ -378,7 +390,6 @@ void Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 	if (position->get_trades().size() == 0)
 	{
 		auto it = _positions.find(asset_index);
-		_position_history.push_back(std::move(it->second));
 		_positions.erase(asset_index);
 	}
 	while (_parent_portfolio) {
@@ -437,8 +448,8 @@ void
 Portfolio::open_position(Order const* order) noexcept
 {
 	auto asset_index = order->get_asset_index();
-	auto position = std::make_unique<Position>(order->get_strategy_mut(), order);
-	this->set_child_portfolio_position_parents(position.get());
+	Position* position = _p->position_pool.get(order->get_strategy_mut(), order);
+	this->set_child_portfolio_position_parents(position);
 	_positions.emplace(
 		asset_index,
 		std::move(position)
@@ -458,8 +469,8 @@ Portfolio::open_position(Trade* trade) noexcept
 	}
 	else
 	{
-		auto position = std::make_unique<Position>(trade->get_strategy_mut(), trade);
-		this->set_child_portfolio_position_parents(position.get());
+		Position* position = _p->position_pool.get(trade->get_strategy_mut(), trade);
+		this->set_child_portfolio_position_parents(position);
 		_positions.emplace(
 			asset_index,
 			std::move(position)
@@ -525,7 +536,7 @@ Portfolio::get_position_mut(size_t asset_index) const noexcept
 	{
 		return std::nullopt;
 	}
-	return it->second.get();
+	return it->second;
 }
 
 
@@ -533,7 +544,10 @@ Portfolio::get_position_mut(size_t asset_index) const noexcept
 std::optional<Trade*> Portfolio::get_trade_mut(size_t asset_index, size_t strategy_index) const noexcept
 {
 	auto position = get_position_mut(asset_index);
-	if (!position) return std::nullopt;
+	if (!position) 
+	{
+		return std::nullopt;
+	}
 	return position.value()->get_trade_mut(strategy_index);
 }
 

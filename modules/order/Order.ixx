@@ -21,6 +21,7 @@ namespace Agis
 
 export enum class OrderType : uint8_t
 {
+	UNKNOWN,
 	MARKET_ORDER
 };
 
@@ -51,7 +52,7 @@ private:
 	OrderState	_state = OrderState::PENDING;
 	bool		_force_close = false;
 
-	size_t		_id;
+	size_t		_id = 0;
 	double		_units = 0;
 	double		_fill_price = 0;
 
@@ -59,11 +60,11 @@ private:
 	long long _fill_time = 0;
 	long long _cancel_time = 0;
 
-	size_t _asset_index;          
-	size_t _strategy_index;          
-	size_t _portfolio_index;
-	size_t _exchange_index;
-	size_t _broker_index; 
+	size_t _asset_index = 0;
+	size_t _strategy_index = 0;
+	size_t _portfolio_index = 0;
+	size_t _exchange_index = 0;
+	size_t _broker_index = 0;
 
 	void fill(Asset const* asset, double market_price, long long fill_time);
 	void cancel(long long cancel_time);
@@ -75,7 +76,16 @@ private:
 	[[nodiscard]] inline std::optional<Portfolio*> get_parent_portfolio_mut() const noexcept { return this->parent_portfolio; }
 
 public:
-
+	Order(){}
+	void init (OrderType order_type,
+		size_t asset_index,
+		double units,
+		Strategy* strategy,
+		size_t strategy_index,
+		size_t exchange_index,
+		size_t portfolio_index
+	);
+	void reset();
 	Order(OrderType order_type,
 		size_t asset_index,
 		double units,

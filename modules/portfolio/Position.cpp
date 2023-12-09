@@ -21,26 +21,55 @@ std::atomic<size_t> Position::_position_counter(0);
 
 
 //============================================================================
+Position::Position()
+{
+}
+
+//============================================================================
+void
+Position::init(
+	Strategy* strategy,
+	Order const* order,
+	std::optional<Position*> parent_position) noexcept
+{
+	_asset  = order->get_asset();
+	_position_id = _position_counter++;
+	_units = order->get_units();
+	_avg_price = order->get_fill_price();
+	_open_price = _avg_price;
+	_last_price = _avg_price;
+	_nlv = _units * _avg_price;
+
+	_open_time = order->get_fill_time();
+	_asset_index = order->get_asset_index();
+	_strategy_index = order->get_strategy_index();
+	_portfolio_index = order->get_portfolio_index();
+
+	auto trade = new Trade(
+		strategy,
+		order,
+		this
+	);
+	_trades.insert({ _strategy_index, trade });
+	strategy->add_trade(trade);
+}
+
+
+//============================================================================
 Position::Position(
 	Strategy* strategy,
 	Order const* order,
 	std::optional<Position*> parent_position) noexcept
-	: _asset(*order->get_asset()), parent_position(parent_position)
+	: _asset(order->get_asset()), parent_position(parent_position)
 {
 	_position_id = _position_counter++;
 	_units = order->get_units();
 	_avg_price = order->get_fill_price();
 	_open_price = _avg_price;
-	_close_price = 0;
 	_last_price = _avg_price;
 	_nlv = _units * _avg_price;
-	_unrealized_pnl = 0;
-	_realized_pnl = 0;
 
 	_open_time = order->get_fill_time();
-	_close_time = 0;
-	_bars_held = 0;
-
 	_asset_index = order->get_asset_index();
 	_strategy_index = order->get_strategy_index();
 	_portfolio_index = order->get_portfolio_index();
@@ -60,21 +89,15 @@ Position::Position(
 	Strategy* strategy,
 	Trade* trade,
 	std::optional<Position*> parent_position) noexcept
-	: _asset(trade->get_asset()), parent_position(parent_position)
+	: _asset(&trade->get_asset()), parent_position(parent_position)
 {
 	_position_id = _position_counter++;
 	_units = trade->get_units();
 	_avg_price = trade->get_avg_price();
 	_open_price = _avg_price;
-	_close_price = 0;
 	_last_price = _avg_price;
 	_nlv = _units * _avg_price;
-	_unrealized_pnl = 0;
-	_realized_pnl = 0;
-
 	_open_time = trade->get_open_time();
-	_close_time = 0;
-	_bars_held = 0;
 
 	_asset_index = trade->get_asset_index();
 	_strategy_index = trade->get_strategy_index();
@@ -82,6 +105,54 @@ Position::Position(
 
 	_trades.insert({ _strategy_index, trade });
 	strategy->add_trade(trade);
+}
+
+
+//============================================================================
+void
+Position::init(
+	Strategy* strategy,
+	Trade* trade,
+	std::optional<Position*> parent_position) noexcept
+{
+	_asset = &trade->get_asset();
+	_position_id = _position_counter++;
+	_units = trade->get_units();
+	_avg_price = trade->get_avg_price();
+	_open_price = _avg_price;
+	_last_price = _avg_price;
+	_nlv = _units * _avg_price;
+	_open_time = trade->get_open_time();
+
+	_asset_index = trade->get_asset_index();
+	_strategy_index = trade->get_strategy_index();
+	_portfolio_index = trade->get_portfolio_index();
+
+	_trades.insert({ _strategy_index, trade });
+	strategy->add_trade(trade);
+}
+
+
+//============================================================================
+void
+Position::reset()
+{
+	// Reset all relevant member variables to their default or initial values,
+	// used by object pool to recycle objects without reallocating memory
+	_units = 0.0f;
+	_avg_price = 0.0f;
+	_open_price = 0.0f;
+	_close_price = 0.0f;
+	_last_price = 0.0f;
+	_nlv = 0.0f;
+	_unrealized_pnl = 0.0f;
+	_realized_pnl = 0.0f;
+
+	_open_time = 0;
+	_close_time = 0;
+	_bars_held = 0;
+
+	_trades.clear();
 }
 
 
@@ -257,7 +328,7 @@ Position::close(
 //============================================================================
 void Position::evaluate(bool on_close, bool is_reprice) noexcept
 {
-	auto price_opt = _asset.get_market_price(on_close);
+	auto price_opt = _asset->get_market_price(on_close);
 	if (!price_opt) return;
 	_last_price = price_opt.value();
 	_nlv = 0.0f;
@@ -285,7 +356,7 @@ void Position::evaluate(bool on_close, bool is_reprice) noexcept
 bool
 Position::is_last_row()
 {
-	return (_asset.get_state() == AssetState::LAST);
+	return (_asset->get_state() == AssetState::LAST);
 }
 
 

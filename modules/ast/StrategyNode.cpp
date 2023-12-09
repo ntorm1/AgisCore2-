@@ -7,7 +7,7 @@ module;
 
 module StrategyNode;
 
-import ASTStrategyModule;
+import StrategyModule;
 import AllocationNode;
 
 namespace Agis
@@ -18,7 +18,7 @@ namespace AST
 
 
 //==================================================================================================
-StrategyNode::StrategyNode(Agis::ASTStrategy& strategy, UniquePtr<AllocationNode> alloc_node, double epsilon)
+StrategyNode::StrategyNode(Agis::Strategy& strategy, UniquePtr<AllocationNode> alloc_node, double epsilon)
 	:	ExpressionNode(NodeType::Strategy),
 		_strategy(strategy),
 		_alloc_node(std::move(alloc_node)),
@@ -41,8 +41,18 @@ StrategyNode::evaluate() noexcept
 	Eigen::VectorXd const& current_weights = _strategy.get_weights();
 	Eigen::VectorXd& weights = *weights_ptr;
 
+	if (_epsilon < 0)
+	{
+		// For all weights that have the same sign as current weights, set the
+		// weight to the value in current weights (i.e. do nothing if position side has not changed)
+		weights = (current_weights.array().sign() == weights.array().sign()).select(current_weights, weights);
+	}
+
+	// find the adjustments need
 	weights -= current_weights;
-	weights = (weights.array().abs() < _epsilon).select(0.0, weights);
+
+	// Set weights to 0 where the absolute difference is less than abs(_epsilon)
+	weights = (weights.array().abs() < abs(_epsilon)).select(0.0, weights);
 	return _strategy.set_allocation(weights);
 }
 
