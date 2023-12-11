@@ -9,6 +9,8 @@ import ExchangeMapModule;
 import ExchangeModule;
 import AgisStrategyTree;
 import SerializeModule;
+import AssetModule;
+import AssetObserverModule;
 
 using namespace Agis;
 using namespace Agis::AST;
@@ -195,6 +197,28 @@ TEST_F(SimpleExchangeTests, TestExchangeMapSerialize) {	// create rapid json doc
 	auto& new_exchanges = new_hydra_ref->get_exchanges();
 	EXPECT_TRUE(new_exchanges.asset_exists(asset_id_1));
 	EXPECT_TRUE(new_exchanges.asset_exists(asset_id_2));
+}
+
+std::function<UniquePtr<AssetObserver>(const Asset&)> createTsArgMaxObserverFactory(int lookback) {
+	return [lookback](const Asset& asset) -> UniquePtr<AssetObserver> {
+		// Create AssetReadObserver
+		auto readObserverFactory = [](const Asset& asset) -> UniquePtr<AssetObserver> {
+			return std::make_unique<AssetReadObserver>(asset, asset.get_close_index());
+			};
+		auto readObserver = readObserverFactory(asset);
+
+		// Create TsArgMaxObserver with AssetReadObserver as an underlying observer
+		return std::make_unique<TsArgMaxObserver>(asset, lookback, std::move(readObserver));
+		};
+}
+
+TEST_F(SimpleExchangeTests, TestArgMaxObserve)
+{
+	hydra->build();
+	auto exchange = hydra->get_exchange_mut(exchange_id_1).value();
+	auto res = exchange->register_observer(createTsArgMaxObserverFactory(2));
+	EXPECT_TRUE(res.has_value());
+	size_t observer_hash = res.value();
 }
 
 TEST_F(SimpleExchangeTests, TestExchangeViewNode) {

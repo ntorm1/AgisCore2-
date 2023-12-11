@@ -5,6 +5,7 @@ export module AgisXPool;
 
 import <vector>;
 import <memory>;
+import <shared_mutex>;
 
 namespace Agis
 {
@@ -28,6 +29,8 @@ class ObjectPool
 
 private:
 	std::vector<std::unique_ptr<T>> _objects;
+	// add mutex
+	std::shared_mutex _mutex;
 	size_t _index = 0;
 public:
 	ObjectPool(size_t n)
@@ -58,26 +61,30 @@ public:
 	template <typename... Args>
 	std::unique_ptr<T> pop_unique(Args&&... args)
 	{
-		if (_index >= _objects.size())
+		_mutex.lock();
+		size_t item_index = _index;
+		_index++;
+		_mutex.unlock();
+		if (item_index >= _objects.size())
 		{
+			_mutex.lock();
 			// Double the capacity and fill with default-constructed objects
 			_objects.resize((_objects.size() + 1) * 2);
 
-			for (size_t i = _index; i < _objects.size(); ++i)
+			for (size_t i = item_index; i < _objects.size(); ++i)
 			{
 				_objects[i] = std::make_unique<T>();
 			}
-			std::unique_ptr<T> obj = std::move(_objects[_index]);
-			_objects[_index] = nullptr;
-			_index++;
+			_mutex.unlock();
+			std::unique_ptr<T> obj = std::move(_objects[item_index]);
+			_objects[item_index] = nullptr;
 			obj->init(std::forward<Args>(args)...);
 			return std::move(obj);
 		}
 		else
 		{
-			std::unique_ptr<T> obj = std::move(_objects[_index]);
-			_objects[_index] = nullptr;
-			_index++;
+			std::unique_ptr<T> obj = std::move(_objects[item_index]);
+			_objects[item_index] = nullptr;
 			obj->init(std::forward<Args>(args)...);
 			return std::move(obj);
 		}
@@ -86,24 +93,26 @@ public:
 	template <typename... Args>
 	T* get(Args&&... args)
 	{
-		if (_index >= _objects.size())
+		_mutex.lock();
+		size_t item_index = _index;
+		_index++;
+		_mutex.unlock();
+		if (item_index >= _objects.size())
 		{
-			// Double the capacity and fill with default-constructed objects
+			_mutex.lock();
 			_objects.resize((_objects.size() + 1) * 2);
-
-			for (size_t i = _index; i < _objects.size(); ++i)
+			for (size_t i = item_index; i < _objects.size(); ++i)
 			{
 				_objects[i] = std::make_unique<T>();
 			}
-			T* obj = _objects[_index].get();
+			_mutex.unlock();
+			T* obj = _objects[item_index].get();
 			obj->init(std::forward<Args>(args)...);
-			_index++;
 			return obj;
 		}
 		else
 		{
-			T* obj = _objects[_index].get();
-			_index++;
+			T* obj = _objects[item_index].get();
 			obj->init(std::forward<Args>(args)...);
 			return obj;
 		}

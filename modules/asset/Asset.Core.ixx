@@ -54,17 +54,18 @@ public:
 	std::optional<double> get_asset_feature(size_t column, int index) const noexcept;
 	std::string const& get_dt_format() const noexcept { return _dt_format; }
 	size_t get_current_index() const noexcept;
-	size_t get_close_index() const noexcept;
 	StridedPointer<double const> get_close_span() const noexcept;
 
 	bool encloses(Asset const& other) const noexcept;
 	std::optional<size_t> get_enclosing_index(Asset const& other) const noexcept;
 	void add_observer(UniquePtr<AssetObserver> observer) noexcept;
+	std::optional<AssetObserver const *> get_observer(size_t hash) const noexcept;
 
 	inline bool is_streaming() const noexcept 
 	{
 		return _state == AssetState::STREAMING || _state == AssetState::LAST;
 	}
+	AGIS_API size_t get_close_index() const noexcept;
 	AGIS_API std::optional<std::vector<double>> get_column(std::string const& column_name) const noexcept;
 	AGIS_API std::optional<size_t> get_streaming_index() const noexcept;
 	AGIS_API std::vector<long long> const& get_dt_index() const noexcept;
@@ -72,7 +73,6 @@ public:
 	AGIS_API std::vector<double> const& get_data() const noexcept;
 	AGIS_API std::string const& get_close_column() const noexcept;
 	AGIS_API std::string const& get_id() const noexcept { return _asset_id; }
-
 
 	// delete copy constructor and assignment operator
 	Asset(const Asset& other) = delete;

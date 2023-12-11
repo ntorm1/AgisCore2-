@@ -6,6 +6,7 @@ module;
 #define AGIS_API __declspec(dllimport)
 #endif
 #include <tbb/task_group.h>
+#include <tbb/concurrent_hash_map.h>
 #include <ankerl/unordered_dense.h>
 
 #include "AgisDeclare.h"
@@ -39,7 +40,7 @@ private:
 	bool _step_call = false;
 	std::string _portfolio_id;
 
-	ankerl::unordered_dense::map<size_t, Position*>		_positions;
+	tbb::concurrent_hash_map<size_t, Position*>		_positions;
 	ankerl::unordered_dense::map<size_t, UniquePtr<Portfolio>>	_child_portfolios;
 	ankerl::unordered_dense::map<size_t, UniquePtr<Strategy>>		_strategies;
 
@@ -47,15 +48,13 @@ private:
 	std::optional<Portfolio*>	_parent_portfolio;
 	std::optional<ExchangeMap*>	_exchange_map = std::nullopt;
 	std::optional<Exchange*>	_exchange = std::nullopt;
-
-	std::vector<Trade*>						_trade_history;
-	std::vector<UniquePtr<Order>>		_order_history;
-
 	StrategyTracers _tracers;
 
 	void build(size_t n);
 	void reset();
 	void zero_out();
+	void build_mutex_map() noexcept;
+	std::mutex& get_asset_mutex(size_t asset_index) const noexcept;
 	std::expected<bool, AgisException> evaluate(bool on_close, bool is_reprice);
 	[[nodiscard]] std::expected<bool, AgisException> step();
 

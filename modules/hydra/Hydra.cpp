@@ -345,7 +345,10 @@ Hydra::create_exchange(
 {
 	auto lock = std::unique_lock(_mutex);
 	_p->built = false;
-	return _p->exchanges.create_exchange(exchange_id, dt_format, source, symbols);
+	auto res = _p->exchanges.create_exchange(exchange_id, dt_format, source, symbols);
+	if (!res) return res;
+	_p->master_portfolio.build_mutex_map();
+	return res.value();
 }
 
 

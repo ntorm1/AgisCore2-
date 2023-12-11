@@ -1,4 +1,5 @@
 module;
+#include <cassert>
 #include <cmath>
 #include <unordered_map>
 #include "AgisDeclare.h"
@@ -8,6 +9,8 @@ module AssetNode;
 import <optional>;
 
 import AssetModule;
+import ExchangeModule;
+import ExchangeNode;
 import AssetObserverModule;
 
 #define AGIS_NAN std::numeric_limits<double>::quiet_NaN()
@@ -35,18 +38,25 @@ AssetLambdaNode::AgisOperatorMap()
 }
 
 //==================================================================================================
-AssetObserverNode::AssetObserverNode(AssetObserver* observer) 
-	: ExpressionNode(NodeType::AssetObserver), _observer(observer)
+AssetObserverNode::AssetObserverNode(size_t observer_hash, SharedPtr<ExchangeNode> e)
+	: AssetLambdaNode(NodeType::AssetObserver), _observer_hash(observer_hash)
 {
+	auto const& assets = e->evaluate()->get_assets();
+	assert(assets.size());
+	auto const& asset = assets[0];
+	auto observer = asset->get_observer(observer_hash);
+	assert(observer);
+	this->set_warmup(observer.value()->warmup());
 }
 
 
 //==================================================================================================
-double
-AssetObserverNode::evaluate() noexcept
+std::optional<double>
+AssetObserverNode::evaluate(Asset const* asset) const noexcept
 {
-	return _observer->value();
+	return (*asset->get_observer(_observer_hash))->value();
 }
+
 
 
 //============================================================================

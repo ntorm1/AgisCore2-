@@ -48,10 +48,9 @@ private:
     /// </summary>
     ankerl::unordered_dense::map<size_t, Trade*> _trades;
 
-    void adjust(
+    std::optional<Trade*> adjust(
         Strategy* strategy,
-        Order* order,
-        std::vector<Trade*>& trade_history
+        Order* order
     ) noexcept;
     void parent_adjust(double units, double price) noexcept;
     void set_parent_position(Position* parent_position) noexcept { this->parent_position = parent_position;}

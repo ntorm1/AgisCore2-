@@ -124,7 +124,7 @@ std::expected<bool, AgisException>
 Exchange::load_h5() noexcept
 {
 	H5::H5File file(this->_source, H5F_ACC_RDONLY);
-	int numObjects = file.getNumObjs();
+	size_t numObjects = static_cast<size_t>(file.getNumObjs());
 	for (size_t i = 0; i < numObjects; i++)
 	{
 		try {
@@ -371,6 +371,25 @@ get_enclosing_asset(Asset const* a, Asset const* b)
 		return b;
 	}
 	return std::unexpected(AgisException("Assets: " + a->get_id() + " and " + b->get_id() + " do not have a common dt index"));
+}
+
+
+//============================================================================
+std::expected<size_t, AgisException>
+Exchange::register_observer(std::function<UniquePtr<AssetObserver>(const Asset&)> observerFactory)
+{
+	size_t observer_hash = 0;
+	for (auto& asset : this->_p->assets)
+	{
+		auto observer = observerFactory(*asset);
+		if(!observer_hash) observer_hash = observer->hash();
+		if (asset->get_observer(observer->hash()))
+		{
+			continue;
+		}
+		asset->add_observer(std::move(observer));
+	}
+	return observer_hash;
 }
 
 

@@ -154,7 +154,7 @@ bool
 Asset::encloses(Asset const& other) const noexcept
 {
 	if(_p->_rows < other._p->_rows) return false;
-	auto other_index = other.get_dt_index();
+	auto const& other_index = other.get_dt_index();
 	auto other_start = get_enclosing_index(other);
 	if (!other_start) return false;
 	for (size_t i = 0; i < other.rows(); i++)
@@ -185,7 +185,18 @@ Asset::get_enclosing_index(Asset const& other) const noexcept
 void
 Asset::add_observer(UniquePtr<AssetObserver> observer) noexcept
 {
-	_p->add_observer(std::move(observer));
+	auto obs_hash = observer->hash();
+	_p->observers[obs_hash] = std::move(observer);
+}
+
+
+//============================================================================
+std::optional<AssetObserver const*>
+Asset::get_observer(size_t hash) const noexcept
+{
+	auto itr = _p->observers.find(hash);
+	if (itr == _p->observers.end()) return std::nullopt;
+	return itr->second.get();
 }
 
 

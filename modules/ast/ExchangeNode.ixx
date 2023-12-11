@@ -99,7 +99,7 @@ public:
 	{
 		_weights.resize(_exchange_view_node->size());
 		_weights.setZero();
-		_N = (n == -1) ? exchange_view_node->size() : static_cast<size_t>(n);
+		_N = (n == -1) ? _exchange_view_node->size() : static_cast<size_t>(n);
 	}
 	AGIS_API virtual ~ExchangeViewSortNode();
 	AGIS_API static std::unordered_map<std::string, ExchangeQueryType> const& ExchangeQueryTypeMap();

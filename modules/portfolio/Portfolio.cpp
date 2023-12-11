@@ -1,6 +1,10 @@
 module;
-
+#include <cassert>
+#include <tbb/concurrent_hash_map.h>
+#include <tbb/concurrent_vector.h>
 #include <tbb/task_group.h>
+#include <boost/container/flat_map.hpp>
+#include <condition_variable>
 #include "AgisDeclare.h"
 #include "AgisMacros.h"
 
@@ -26,7 +30,11 @@ class PortfolioPrivate
 {
 public:
 	ObjectPool<Position> position_pool;
-
+	std::unique_ptr<std::mutex[]>  _asset_mutex_map;
+	std::unique_ptr<std::condition_variable_any[]> _asset_cv_map;
+	tbb::concurrent_vector<Trade*>						trade_history;
+	tbb::concurrent_vector<UniquePtr<Order>>		order_history;
+	size_t exchange_offset = 0;
 	PortfolioPrivate(size_t init_position_pool_size) : position_pool(init_position_pool_size) {}
 	~PortfolioPrivate() {}
 };
@@ -49,10 +57,16 @@ Portfolio::Portfolio(
 	{
 		_parent_portfolio = parent_portfolio.value();
 	}
+	else
+	{
+		assert(id == "master");
+	}
 	if (exchange)
 	{
+		_p->exchange_offset = exchange.value()->get_index_offset();
 		_exchange = exchange.value();
 		_exchange.value()->register_portfolio(this);
+		build_mutex_map();
 	}
 }
 
@@ -60,10 +74,45 @@ Portfolio::Portfolio(
 //============================================================================
 Portfolio::~Portfolio()
 {
-	for (auto& trade : _trade_history)
+	for (auto& trade : _p->trade_history)
 	{
 		delete trade;
 	}
+}
+
+
+//============================================================================
+void
+Portfolio::build_mutex_map() noexcept
+{
+	size_t new_size;
+	// init the asset mutex map with single thread to prevent bad allocs
+	if (_exchange)
+	{
+		new_size =  _exchange.value()->get_assets().size();
+	}
+	else
+	{
+		auto const& assets = (*_exchange_map)->get_assets();
+		new_size = assets.size();
+	}
+	_p->_asset_mutex_map.reset(new std::mutex[new_size]);
+	_p->_asset_cv_map.reset(new std::condition_variable_any[new_size]);
+}
+
+//============================================================================
+std::mutex&
+Portfolio::get_asset_mutex(size_t asset_index) const noexcept
+{
+	asset_index -= _p->exchange_offset;
+	auto& asset_mutex = _p->_asset_mutex_map[asset_index];
+;	std::unique_lock<std::mutex> lock(asset_mutex);
+
+	// Wait until the mutex is available
+	_p->_asset_cv_map[asset_index].wait(lock, [&] { return !asset_mutex.try_lock(); });
+
+	// Lock is now acquired
+	return asset_mutex;
 }
 
 
@@ -94,12 +143,15 @@ Portfolio::get_position(std::string const& asset_id) const noexcept
 	if(!asset_index) return std::nullopt;
 
 	// find the position in the portfolio
-	auto it = _positions.find(asset_index.value());
-	if (it == _positions.end())
+	if(!_positions.count(asset_index.value()))
 	{
 		return std::nullopt;
 	}
-	return it->second;
+	tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+	if (_positions.find(accessor, asset_index.value())) {
+		return accessor->second;
+	}
+	return std::nullopt;
 }
 
 
@@ -123,8 +175,8 @@ Portfolio::build(size_t n)
 void Portfolio::reset()
 {
 	_tracers.reset();
-	_trade_history.clear();
-	_order_history.clear();
+	_p->trade_history.clear();
+	_p->order_history.clear();
 	_positions.clear();
 	_p->position_pool.reset();
 
@@ -282,16 +334,17 @@ Portfolio::place_order(std::unique_ptr<Order> order) noexcept
 void
 Portfolio::process_filled_order(Order* order)
 {
-	std::unique_lock<std::shared_mutex> lock(_mutex);
+	auto asset_index = order->get_asset_index();
+	std::unique_lock<std::mutex> lock(_p->_asset_mutex_map[asset_index]);
 
-	auto position_opt = get_position_mut(order->get_asset_index());
+	auto position_opt = get_position_mut(asset_index);
 	if (!position_opt)
 	{
 		this->open_position(order);
 		if (_parent_portfolio) 
 		{
 			auto strategy_index = order->get_strategy_index();
-			auto trade = this->get_trade_mut(order->get_asset_index(), strategy_index).value();
+			auto trade = this->get_trade_mut(asset_index, strategy_index).value();
 			_parent_portfolio.value()->open_position(trade);
 		}	
 	}
@@ -352,7 +405,7 @@ void Portfolio::process_order(std::unique_ptr<Order> order)
 	if (_tracers.track_orders)
 	{
 		auto lock = std::lock_guard(_mutex);
-		_order_history.push_back(std::move(order));
+		_p->order_history.push_back(std::move(order));
 	}
 }
 
@@ -365,7 +418,7 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 	auto& trades = position->get_trades();
 	for (auto& [strategy_index, trade] : trades)
 	{
-		_trade_history.push_back(trade);
+		_p->trade_history.push_back(trade);
 		if (_parent_portfolio)
 		{
 			_parent_portfolio.value()->close_trade(
@@ -376,8 +429,6 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 	}
 	auto asset_index = order->get_asset_index();
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
-	auto it = _positions.find(asset_index);
-	auto extracted_position = std::move(it->second);
 	_positions.erase(asset_index);
 }
 
@@ -389,10 +440,11 @@ void Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 	position->close_trade(strategy_index);
 	if (position->get_trades().size() == 0)
 	{
-		auto it = _positions.find(asset_index);
 		_positions.erase(asset_index);
 	}
-	while (_parent_portfolio) {
+	if (_parent_portfolio) 
+	{
+		std::unique_lock<std::mutex> lock(_parent_portfolio.value()->get_asset_mutex(asset_index));
 		_parent_portfolio.value()->close_trade(asset_index, strategy_index);
 	}
 }
@@ -401,9 +453,13 @@ void Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 //============================================================================
 void Portfolio::insert_trade(Trade* trade) noexcept
 {
-	auto position = get_position_mut(trade->get_asset_index()).value();
+	auto asset_index = trade->get_asset_index();
+	auto position = get_position_mut(asset_index).value();
 	position->adjust(trade);
-	while (_parent_portfolio) {
+	if (_parent_portfolio) 
+	{
+		// try to obtain a write lock on the asset mutex
+		std::unique_lock<std::mutex> lock(_parent_portfolio.value()->get_asset_mutex(asset_index));
 		_parent_portfolio.value()->insert_trade(trade);
 	}
 }
@@ -413,16 +469,15 @@ void Portfolio::insert_trade(Trade* trade) noexcept
 void
 Portfolio::adjust_position(Order* order, Position* position) noexcept
 {
-	auto history_size = _trade_history.size();
 	auto init_trade_opt = position->get_trade_mut(order->get_strategy_index());
-	position->adjust(order->get_strategy_mut(), order, _trade_history);
+	auto closed_trade_opt = position->adjust(order->get_strategy_mut(), order);
 	
 	if (!_parent_portfolio) return;
 
 	// if the trade was closed then remove it from the trade history and propogate close up
-	if (_trade_history.size() > history_size)
+	if (closed_trade_opt)
 	{
-		auto trade = _trade_history.back();
+		auto trade = closed_trade_opt.value();
 		_parent_portfolio.value()->close_trade(trade->get_asset_index(), trade->get_strategy_index());
 		return;
 	}
@@ -461,9 +516,14 @@ Portfolio::open_position(Order const* order) noexcept
 void
 Portfolio::open_position(Trade* trade) noexcept
 {
+	// open position called with trade occurs when a child portfolio propogates a new 
+	// open position up, therefore need to aquire a write lock on the asset mutex
 	auto asset_index = trade->get_asset_index();
-	auto it = _positions.find(asset_index);
-	if (it != _positions.end())
+	auto& mutex = get_asset_mutex(asset_index);
+	auto unique_lock = std::unique_lock(mutex);
+
+
+	if (position_exists(asset_index))
 	{
 		this->insert_trade(trade);
 	}
@@ -478,6 +538,7 @@ Portfolio::open_position(Trade* trade) noexcept
 	}
 	while (_parent_portfolio) 
 	{
+
 		_parent_portfolio.value()->open_position(trade);
 	}
 }
@@ -531,12 +592,11 @@ Portfolio::get_parent_position(size_t asset_index) const noexcept
 std::optional<Position*>
 Portfolio::get_position_mut(size_t asset_index) const noexcept
 {
-	auto it = _positions.find(asset_index);
-	if (it == _positions.end())
-	{
-		return std::nullopt;
+	tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+	if (_positions.find(accessor, asset_index)) {
+		return accessor->second;
 	}
-	return it->second;
+	return std::nullopt;
 }
 
 
@@ -556,7 +616,11 @@ std::optional<Trade*> Portfolio::get_trade_mut(size_t asset_index, size_t strate
 bool
 Portfolio::position_exists(size_t index) const noexcept
 {
-	return _positions.find(index) != _positions.end();
+	tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+	if (_positions.find(accessor, index)) {
+		return true;
+	}
+	return false;
 }
 
 
@@ -564,13 +628,14 @@ Portfolio::position_exists(size_t index) const noexcept
 bool
 Portfolio::trade_exists(size_t asset_index, size_t strategy_index) const noexcept
 {
-	auto it = _positions.find(asset_index);
-	if (it == _positions.end())
-	{
-		return false;
+	tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+	if (_positions.find(accessor, asset_index)) {
+		return accessor->second->trade_exists(strategy_index);
 	}
-	return it->second->trade_exists(strategy_index);
+	return false;
 }
+
+
 
 
 //============================================================================

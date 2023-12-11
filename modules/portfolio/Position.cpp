@@ -185,11 +185,11 @@ Position::adjust(Trade* trade) noexcept
 
 
 //============================================================================
-void
+std::optional<Trade*>
 Position::adjust(
 	Strategy* strategy,
-	Order* order,
-	std::vector<Trade*>& trade_history) noexcept
+	Order* order
+) noexcept
 {
 	auto order_units = order->get_units();
 	auto fill_price = order->get_fill_price();
@@ -233,10 +233,10 @@ Position::adjust(
 		if (abs(trade->get_units() + order_units) < UNIT_EPSILON)
 		{
 			trade->close(order);
-			auto trade_ptr = _trades.at(strategy_index);
+			auto closed_trade = _trades.at(strategy_index);
 			_trades.erase(strategy_index);
 			strategy->remove_trade(order->get_asset_index());
-			trade_history.push_back(trade_ptr);
+			return closed_trade;
 		}
 		else
 		{
@@ -249,10 +249,9 @@ Position::adjust(
 				auto units_left = trade_units + _units;
 
 				trade->close(order);
-				auto trade_ptr = _trades.at(strategy_index);
+				auto closed_trade = _trades.at(strategy_index);
 				_trades.erase(strategy_index);
 				strategy->remove_trade(order->get_asset_index());
-				trade_history.push_back(trade_ptr);
 
 				// open a new trade with the new order minus the units needed to close out 
 				// the previous trade
@@ -265,6 +264,7 @@ Position::adjust(
 				this->_trades.insert({ strategy_index, trade });
 				strategy->add_trade(trade);
 				order->set_units(order_units);
+				return closed_trade;
 			}
 			else
 			{
@@ -272,6 +272,7 @@ Position::adjust(
 			}
 		}
 	}
+	return std::nullopt;
 }
 
 

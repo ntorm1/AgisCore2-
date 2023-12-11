@@ -74,6 +74,7 @@ ExchangeMap::create_exchange(
 		exchange_id, dt_format, source, symbols)
 	);
 	auto& exchange_assets = exchange->get_assets();
+	exchange->set_index_offset(_p->assets.size());
 	for (auto& asset : exchange_assets)
 	{
 		_p->assets.push_back(asset.get());
@@ -82,7 +83,6 @@ ExchangeMap::create_exchange(
 	}
 	// set the exchanges index offest. When exchange is indexing into it's asset vector
 	// it will need to subtract this offset from the assets' index to get the correct index for it's vector
-	exchange->set_index_offset(_p->assets.size() - _p->assets.size());
 	
 	// update the map with exchange info
 	auto exchange_ptr = exchange.get();

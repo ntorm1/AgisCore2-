@@ -89,6 +89,7 @@ public:
 	std::vector<long long> const& get_dt_index() const noexcept;
 	size_t get_index_offset() const noexcept { return _index_offset; }
 	
+	AGIS_API std::expected<size_t, AgisException> register_observer(std::function<UniquePtr<AssetObserver>(const Asset&)> observerFactory);
 	AGIS_API std::optional<double> get_covariance(size_t index1, size_t index2) const noexcept;
 	AGIS_API std::expected<bool, AgisException> init_covariance_matrix(size_t lookback, size_t step_size) noexcept;
 	AGIS_API std::vector<UniquePtr<Asset>> const& get_assets() const noexcept;

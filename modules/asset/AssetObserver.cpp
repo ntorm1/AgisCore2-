@@ -17,7 +17,8 @@ std::unordered_map<std::string, ObserverType> observer_type_map = {
 
 
 //============================================================================
-AssetObserver::AssetObserver(Asset const& asset, ObserverType t) : _asset(asset), _type(t)
+AssetObserver::AssetObserver(Asset const& asset, ObserverType t) 
+	: _asset(asset), _type(t)
 {
 	_data_ptr = asset.get_data_ptr();
 }
@@ -35,6 +36,7 @@ SumObserver::SumObserver(Asset const& asset, size_t lockback, UniquePtr<AssetObs
 void
 SumObserver::on_step() noexcept
 {
+	/*
 	_input->on_step();
 	auto v = _input->value();
 	if (_input->type() != ObserverType::Read)
@@ -44,7 +46,7 @@ SumObserver::on_step() noexcept
 		auto next_index = (_current_index + 1) % _lookback;
 		if (_count >= _lookback - 1)
 		{
-			_sum -= _buffer[_current_index];
+			_sum -= _buffer[next_index];
 		}
 	}
 	else if (_count >= _lookback - 1)
@@ -55,6 +57,7 @@ SumObserver::on_step() noexcept
 	}
 	_sum += v;
 	_count++;
+	*/
 }
 
 
@@ -78,6 +81,123 @@ SumObserver::on_reset() noexcept
 	_current_index = 0;
 }
 
+
+//============================================================================
+TsMaxObserver::TsMaxObserver(Asset const& asset, size_t lookback, UniquePtr<AssetObserver> input)
+	: AssetObserver(asset, ObserverType::TsArgMinMax), _lookback(lookback), _input(std::move(input)), _max(0.0)
+{
+	this->on_reset();
+}
+
+
+//============================================================================
+void
+TsMaxObserver::on_step() noexcept
+{
+	_input->on_step();
+	auto v = _input->value();
+	if (v > _max)
+	{
+		_max = v;
+		_max_index = _current_index;
+	}
+	else if (_count >= _lookback - 1)
+	{
+		if (_current_index == _max_index)
+		{
+			_max = *std::max_element(_buffer.begin(), _buffer.end());
+		}
+	}
+	_buffer[_current_index] = v;
+	_current_index = (_current_index + 1) % _lookback;
+	_count++;
+}
+
+
+//============================================================================
+void
+TsMaxObserver::on_reset() noexcept
+{
+	_input->on_reset();
+	if (!_buffer.size())
+	{
+		_buffer.resize(_lookback, 0.0f);
+	}
+	else
+	{
+		std::fill(_buffer.begin(), _buffer.end(), 0.0f);
+	}
+	_max = 0.0f;
+	_count = 0;
+	_current_index = 0;
+}
+
+
+//============================================================================
+TsArgMaxObserver::TsArgMaxObserver(
+	Asset const& asset, size_t lookback, UniquePtr<AssetObserver> input)
+	: 
+	AssetObserver(asset, ObserverType::TsArgMinMax),
+	_lookback(lookback),
+	_input(std::move(input)),
+	_arg_index(0)
+{
+}
+
+
+//============================================================================
+void
+TsArgMaxObserver::on_step() noexcept
+{
+	_input->on_step();
+	auto v = _input->value();
+	if (v > _arg_value)
+	{
+		_arg_value = v;
+		_arg_index = _current_index;
+	}
+	else if (_count >= _lookback - 1)
+	{
+		// test if value about to be removed is the maximum value
+		if (_current_index == _arg_index)
+		{
+			auto iter = std::max_element(_buffer.begin(), _buffer.end());
+			_arg_value = *iter;
+			_arg_index = _current_index + std::distance(_buffer.begin(), iter);
+		}
+	}
+	_buffer[_current_index] = v;
+	_current_index = (_current_index + 1) % _lookback;
+	_count++;
+}
+
+
+//============================================================================
+void
+TsArgMaxObserver::on_reset() noexcept
+{
+	_input->on_reset();
+	if (!_buffer.size())
+	{
+		_buffer.resize(_lookback, 0.0f);
+	}
+	else
+	{
+		std::fill(_buffer.begin(), _buffer.end(), 0.0f);
+	}
+	_arg_value = 0.0f;
+	_count = 0;
+	_current_index = 0;
+}
+
+
+//============================================================================
+size_t TsArgMaxObserver::hash() const noexcept 
+{
+	std::hash<size_t> type_hash = std::hash<size_t>();
+	std::hash<size_t> lookback_hash = std::hash<size_t>();
+	return type_hash(static_cast<size_t>(this->_type)) ^ lookback_hash(this->_lookback);
+}
 
 
 //============================================================================
@@ -133,11 +253,14 @@ void ReturnsVarianceObserver::on_reset() noexcept
 
 
 //============================================================================
-std::string
-ReturnsVarianceObserver::str_rep() const noexcept
+size_t
+ReturnsVarianceObserver::hash() const noexcept
 {
-	return "VAR" + _asset.get_id() + std::to_string(_lookback);
+	std::hash<size_t> type_hash = std::hash<size_t>();
+	std::hash<size_t> lookback_hash = std::hash<size_t>();
+	return type_hash(static_cast<size_t>(this->_type)) ^ lookback_hash(this->_lookback);
 }
+
 
 //============================================================================
 ReturnsCovarianceObserver::ReturnsCovarianceObserver(
@@ -207,7 +330,15 @@ ReturnsCovarianceObserver::on_step() noexcept
 	*this->_lower_triangular = this->_covariance;
 	this->_index++;
 }
-	
+
+size_t ReturnsCovarianceObserver::hash() const noexcept
+{
+	std::hash<size_t> type_hash = std::hash<size_t>();
+	std::hash<size_t> child_hash = std::hash<size_t>();
+	std::hash<size_t> lookback_hash = std::hash<size_t>();
+	return type_hash(static_cast<size_t>(this->_type)) ^ child_hash(this->_child.get_index()) ^ lookback_hash(this->_lookback);
+}
+
 
 //============================================================================
 void
@@ -230,23 +361,22 @@ ReturnsCovarianceObserver::on_reset() noexcept
 }
 
 
-//============================================================================
-std::string
-ReturnsCovarianceObserver::str_rep() const noexcept
-{
-	return  "COV_" + 
-		_asset.get_id() + "_" +
-		_child.get_id() + "_" +
-		std::to_string(_lookback) + "_" +
-		std::to_string(_step_size);
-}
-
 
 //============================================================================
 void
 AssetReadObserver::on_step() noexcept
 {
 	_value = _asset.get_asset_feature(_column, 0).value();
+}
+
+
+//============================================================================
+size_t
+AssetReadObserver::hash() const noexcept 
+{
+	std::hash<size_t> type_hash = std::hash<size_t>();
+	std::hash<size_t> col_hash = std::hash<size_t>();
+	return type_hash(static_cast<size_t>(this->_type)) ^ col_hash(this->_column);
 }
 
 

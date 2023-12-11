@@ -46,7 +46,7 @@ private:
 
 
 //==================================================================================================
-export class AssetLambdaReadNode : public AssetLambdaNode
+export class AssetLambdaReadNode final: public AssetLambdaNode
 {
 public:
 	AssetLambdaReadNode(size_t column, int index) noexcept:
@@ -68,17 +68,18 @@ private:
 };
 
 
+
 //==================================================================================================
-export class AssetObserverNode : public ExpressionNode<double>
+export class AssetObserverNode final: public AssetLambdaNode
 {
 public:
-	AssetObserverNode(AssetObserver* observer);
-	AGIS_API virtual ~AssetObserverNode() = default;
+	AssetObserverNode(size_t observer_hash, SharedPtr<ExchangeNode> e);
+	AGIS_API ~AssetObserverNode() = default;
 
-	double evaluate() noexcept override;
+	AGIS_API std::optional<double> evaluate(Asset const* asset) const noexcept override;
 
 private:
-	AssetObserver* _observer;
+	size_t _observer_hash;
 
 };
 

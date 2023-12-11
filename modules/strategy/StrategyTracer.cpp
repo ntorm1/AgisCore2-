@@ -187,6 +187,7 @@ std::expected<bool, AgisException> StrategyTracers::evaluate(bool is_reprice)
 
 	if (!is_reprice) 
 	{
+		//TODO strategy added after build
 		// Note: at this point all trades have been evaluated and the cash balance has been updated
 		// so we only have to observer the values or use them to calculate other values.
 		if (this->has(Tracer::NLV)) this->nlv_history[_current_index] = this->nlv.load();

@@ -14,18 +14,6 @@ namespace Agis
 
 
 //============================================================================
-void
-AssetPrivate::add_observer(UniquePtr<AssetObserver> observer) noexcept
-{
-	auto str_rep = observer->str_rep();
-	if(!observers.contains(str_rep))
-	{
-		observers[std::move(str_rep)] = std::move(observer);
-	}
-}
-
-
-//============================================================================
 size_t
 AssetPrivate::get_index(size_t row, size_t col) {
 	return row * _cols + col;
