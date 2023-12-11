@@ -147,10 +147,13 @@ Position::reset()
 	_nlv = 0.0f;
 	_unrealized_pnl = 0.0f;
 	_realized_pnl = 0.0f;
-
 	_open_time = 0;
 	_close_time = 0;
 	_bars_held = 0;
+
+	_asset_index = 0;
+	_strategy_index = 0;
+	_portfolio_index = 0;
 
 	_trades.clear();
 }

@@ -421,31 +421,43 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 		_p->trade_history.push_back(trade);
 		if (_parent_portfolio)
 		{
+			auto asset_index = trade->get_asset_index();
+			auto& parent_mutex = _parent_portfolio.value()->get_asset_mutex(asset_index);
+			std::unique_lock<std::mutex> lock(parent_mutex);
 			_parent_portfolio.value()->close_trade(
-				trade->get_asset_index(),
+				asset_index,
 				trade->get_strategy_index()
 			);
 		}
 	}
 	auto asset_index = order->get_asset_index();
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
+	tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+	_positions.find(accessor, asset_index);
 	_positions.erase(asset_index);
 }
 
 
 //============================================================================
-void Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
+void
+Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 {
-	auto position = get_position_mut(asset_index).value();
+	auto position_opt = get_position_mut(asset_index);
+	assert(position_opt);
+	auto position = position_opt.value();
 	position->close_trade(strategy_index);
 	if (position->get_trades().size() == 0)
 	{
+		tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+		_positions.find(accessor, asset_index);
 		_positions.erase(asset_index);
 	}
 	if (_parent_portfolio) 
 	{
-		std::unique_lock<std::mutex> lock(_parent_portfolio.value()->get_asset_mutex(asset_index));
+		auto& parent_mutex = _parent_portfolio.value()->get_asset_mutex(asset_index);
+		parent_mutex.lock();
 		_parent_portfolio.value()->close_trade(asset_index, strategy_index);
+		parent_mutex.unlock();
 	}
 }
 
@@ -459,8 +471,10 @@ void Portfolio::insert_trade(Trade* trade) noexcept
 	if (_parent_portfolio) 
 	{
 		// try to obtain a write lock on the asset mutex
-		std::unique_lock<std::mutex> lock(_parent_portfolio.value()->get_asset_mutex(asset_index));
+		auto& parent_mutex = _parent_portfolio.value()->get_asset_mutex(asset_index);
+		parent_mutex.lock();
 		_parent_portfolio.value()->insert_trade(trade);
+		parent_mutex.unlock();
 	}
 }
 
@@ -478,11 +492,17 @@ Portfolio::adjust_position(Order* order, Position* position) noexcept
 	if (closed_trade_opt)
 	{
 		auto trade = closed_trade_opt.value();
-		_parent_portfolio.value()->close_trade(trade->get_asset_index(), trade->get_strategy_index());
+		auto asset_index = trade->get_asset_index();
+		auto& parent_mutex = _parent_portfolio.value()->get_asset_mutex(asset_index);
+		std::unique_lock<std::mutex> lock(parent_mutex);
+		_parent_portfolio.value()->close_trade(asset_index, trade->get_strategy_index());
 		return;
 	}
 	// if trade is new then insert it up the tree
 	auto trade = position->get_trade_mut(order->get_strategy_index()).value();
+	auto asset_index = trade->get_asset_index();
+	auto& parent_mutex = _parent_portfolio.value()->get_asset_mutex(asset_index);
+	parent_mutex.lock();
 	if (!init_trade_opt)
 	{
 		_parent_portfolio.value()->insert_trade(trade);
@@ -490,11 +510,11 @@ Portfolio::adjust_position(Order* order, Position* position) noexcept
 	// if trade was reversed then there is a new trade pointer 
 	else if (init_trade_opt.value() != trade)
 	{
-		auto asset_index = trade->get_asset_index();
 		auto strategy_index = trade->get_strategy_index();
 		_parent_portfolio.value()->close_trade(asset_index, strategy_index);
 		_parent_portfolio.value()->insert_trade(trade);
 	}
+	parent_mutex.unlock();
 }
 
 
@@ -538,7 +558,6 @@ Portfolio::open_position(Trade* trade) noexcept
 	}
 	while (_parent_portfolio) 
 	{
-
 		_parent_portfolio.value()->open_position(trade);
 	}
 }
