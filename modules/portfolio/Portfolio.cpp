@@ -432,8 +432,6 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 	}
 	auto asset_index = order->get_asset_index();
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
-	tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
-	_positions.find(accessor, asset_index);
 	_positions.erase(asset_index);
 }
 
@@ -448,8 +446,6 @@ Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 	position->close_trade(strategy_index);
 	if (position->get_trades().size() == 0)
 	{
-		tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
-		_positions.find(accessor, asset_index);
 		_positions.erase(asset_index);
 	}
 	if (_parent_portfolio) 
@@ -525,10 +521,9 @@ Portfolio::open_position(Order const* order) noexcept
 	auto asset_index = order->get_asset_index();
 	Position* position = _p->position_pool.get(order->get_strategy_mut(), order);
 	this->set_child_portfolio_position_parents(position);
-	_positions.emplace(
-		asset_index,
-		std::move(position)
-	);
+	tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+	_positions.insert(accessor, asset_index);
+	accessor->second = position;
 }
 
 
@@ -551,10 +546,9 @@ Portfolio::open_position(Trade* trade) noexcept
 	{
 		Position* position = _p->position_pool.get(trade->get_strategy_mut(), trade);
 		this->set_child_portfolio_position_parents(position);
-		_positions.emplace(
-			asset_index,
-			std::move(position)
-		);
+		tbb::concurrent_hash_map<size_t, Position*>::accessor accessor;
+		_positions.insert(accessor, asset_index);
+		accessor->second = position;
 	}
 	while (_parent_portfolio) 
 	{
