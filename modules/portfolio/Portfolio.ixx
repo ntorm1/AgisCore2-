@@ -105,6 +105,7 @@ public:
 	AGIS_API double get_cash() const noexcept;
 	AGIS_API double get_nlv() const noexcept;
 	AGIS_API auto const& positions() const noexcept {return _positions;}
+	AGIS_API tbb::concurrent_vector<UniquePtr<Order>> const& order_history() const noexcept;
 	AGIS_API auto const& get_tracers() const noexcept { return _tracers; }
 
 	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }

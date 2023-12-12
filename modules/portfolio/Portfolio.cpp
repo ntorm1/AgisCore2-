@@ -21,8 +21,12 @@ import AgisXPool;
 import <string>;
 
 
+
+
 namespace Agis
 {
+
+using TbbAccessor = tbb::concurrent_hash_map<size_t, Position*>::accessor;
 
 
 //============================================================================
@@ -353,9 +357,10 @@ Portfolio::process_filled_order(Order* order)
 		auto position = position_opt.value();
 		auto order_units = order->get_units();
 		auto position_units = position->get_units();
+		auto combined_units = abs(order_units + position_units);
 		// if the new order units plut existing position units is not zero then the order
 		// is an adjustment of the current position
-		if (abs(order_units + position_units) > UNIT_EPSILON)
+		if (combined_units > UNIT_EPSILON)
 		{
 			this->adjust_position(order, position);
 		}
@@ -404,7 +409,6 @@ void Portfolio::process_order(std::unique_ptr<Order> order)
 	}
 	if (_tracers.track_orders)
 	{
-		auto lock = std::lock_guard(_mutex);
 		_p->order_history.push_back(std::move(order));
 	}
 }
@@ -432,7 +436,9 @@ Portfolio::close_position(Order const* order, Position* position) noexcept
 	}
 	auto asset_index = order->get_asset_index();
 	_tracers.unrealized_pnl_add_assign(-1*position->get_unrealized_pnl());
-	_positions.erase(asset_index);
+	TbbAccessor accessor;
+	_positions.find(accessor, asset_index);
+	_positions.erase(accessor);
 }
 
 
@@ -446,7 +452,9 @@ Portfolio::close_trade(size_t asset_index, size_t strategy_index) noexcept
 	position->close_trade(strategy_index);
 	if (position->get_trades().size() == 0)
 	{
-		_positions.erase(asset_index);
+		TbbAccessor accessor;
+		_positions.find(accessor, asset_index);
+		_positions.erase(accessor);
 	}
 	if (_parent_portfolio) 
 	{
@@ -663,6 +671,14 @@ Portfolio::get_cash() const noexcept
 double Portfolio::get_nlv() const noexcept
 {
 	return _tracers.get(Tracer::NLV).value();
+}
+
+
+//============================================================================
+tbb::concurrent_vector<UniquePtr<Order>> const&
+Portfolio::order_history() const noexcept
+{
+	return _p->order_history;
 }
 
 }

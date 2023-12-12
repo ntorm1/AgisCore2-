@@ -287,9 +287,17 @@ Hydra::register_strategy(std::unique_ptr<Strategy> strategy)
 	{
 		return std::unexpected<AgisException>(AgisException("Strategy already exists"));
 	}
-	_p->strategies[strategy->get_strategy_id()] = strategy.get();
+	if (_p->built)
+	{
+		strategy->build(_p->exchanges.get_dt_index().size());
+	}
 	auto portfolio = strategy->get_portfolio_mut();
-	return portfolio->add_strategy(std::move(strategy));
+	auto p = strategy.get();
+	auto id = strategy->get_strategy_id();
+	auto res = portfolio->add_strategy(std::move(strategy));
+	if (!res) return res;
+	_p->strategies[std::move(id)] = p;
+	return true;
 }
 
 //============================================================================
