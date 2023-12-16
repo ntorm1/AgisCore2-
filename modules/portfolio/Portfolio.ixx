@@ -7,6 +7,7 @@ module;
 #endif
 #include <tbb/task_group.h>
 #include <tbb/concurrent_hash_map.h>
+#include <tbb/concurrent_vector.h>
 #include <ankerl/unordered_dense.h>
 
 #include "AgisDeclare.h"
@@ -55,9 +56,12 @@ private:
 	void zero_out();
 	void build_mutex_map() noexcept;
 	std::mutex& get_asset_mutex(size_t asset_index) const noexcept;
-	std::expected<bool, AgisException> evaluate(bool on_close, bool is_reprice);
+	[[nodiscard]] std::expected<bool, AgisException> remove_strategy(Strategy& strategy);
+	[[nodiscard]] std::expected<bool, AgisException> evaluate(bool on_close, bool is_reprice);
 	[[nodiscard]] std::expected<bool, AgisException> step();
 
+	template <typename T>
+	void free_object_vector(tbb::concurrent_vector<T*>& objects);
 
 	std::expected<Portfolio*, AgisException> add_child_portfolio(
 		std::string id,
@@ -69,6 +73,7 @@ private:
 	void place_order(UniquePtr<Order> order) noexcept;
 	void process_filled_order(Order* order);
 	void process_order(UniquePtr<Order> order);
+	void remember_order(Order* order) noexcept;
 
 	void close_position(Order const* order, Position* position) noexcept;
 	void close_trade(size_t asset_index, size_t strategy_index) noexcept;
@@ -105,7 +110,7 @@ public:
 	AGIS_API double get_cash() const noexcept;
 	AGIS_API double get_nlv() const noexcept;
 	AGIS_API auto const& positions() const noexcept {return _positions;}
-	AGIS_API tbb::concurrent_vector<UniquePtr<Order>> const& order_history() const noexcept;
+	AGIS_API tbb::concurrent_vector<Order*> const& order_history() const noexcept;
 	AGIS_API auto const& get_tracers() const noexcept { return _tracers; }
 
 	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }
@@ -114,6 +119,5 @@ public:
 
 
 };
-
 
 }

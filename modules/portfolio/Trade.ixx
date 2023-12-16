@@ -51,8 +51,9 @@ private:
     void adjust(Order const* filled_order);
     void evaluate(double market_price, bool on_close, bool is_reprice);
     UniquePtr<Order> generate_trade_inverse();
-    Asset const& get_asset() const { return _asset; }
-    Strategy* get_strategy_mut() const { return _strategy; }
+    Asset const& get_asset() const noexcept { return _asset; }
+    Strategy* get_strategy_mut() const noexcept { return _strategy; }
+    Portfolio* get_parent_portfolio_mut() const noexcept { return _portfolio; }
 
 
 public:

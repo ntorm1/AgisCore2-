@@ -6,7 +6,6 @@ module;
 module OrderModule;
 
 
-
 namespace Agis
 {
 
@@ -14,7 +13,14 @@ std::atomic<size_t> Order::order_counter(0);
 
 
 //============================================================================
-void Order::init(OrderType order_type, size_t asset_index, double units, Strategy* strategy, size_t strategy_index, size_t exchange_index, size_t portfolio_index)
+void Order::init(
+	OrderType order_type,
+	size_t asset_index,
+	double units,
+	Strategy* strategy,
+	size_t strategy_index,
+	size_t exchange_index,
+	size_t portfolio_index)
 {
 	_type = order_type;
 	_asset_index = asset_index;
@@ -31,7 +37,7 @@ void Order::reset()
 {
 	_asset = nullptr;
 	_strategy = nullptr;
-	parent_portfolio = std::nullopt; 
+	_portfolio = nullptr;
 	_type = OrderType::UNKNOWN;
 	_state = OrderState::PENDING;
 	_force_close = false;

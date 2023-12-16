@@ -36,8 +36,8 @@ public:
 	ObjectPool<Position> position_pool;
 	std::unique_ptr<std::mutex[]>  _asset_mutex_map;
 	std::unique_ptr<std::condition_variable_any[]> _asset_cv_map;
-	tbb::concurrent_vector<Trade*>						trade_history;
-	tbb::concurrent_vector<UniquePtr<Order>>		order_history;
+	tbb::concurrent_vector<Trade*>					trade_history;
+	tbb::concurrent_vector<Order*>					order_history;
 	size_t exchange_offset = 0;
 	PortfolioPrivate(size_t init_position_pool_size) : position_pool(init_position_pool_size) {}
 	~PortfolioPrivate() {}
@@ -78,10 +78,8 @@ Portfolio::Portfolio(
 //============================================================================
 Portfolio::~Portfolio()
 {
-	for (auto& trade : _p->trade_history)
-	{
-		delete trade;
-	}
+	free_object_vector<Trade>(_p->trade_history);
+	free_object_vector<Order>(_p->order_history);
 }
 
 
@@ -136,6 +134,21 @@ std::shared_lock<std::shared_mutex> Portfolio::__aquire_read_lock() const noexce
 
 
 //============================================================================
+std::expected<bool, AgisException>
+Portfolio::remove_strategy(Strategy& strategy)
+{
+	if (
+		!_strategies.count(strategy.get_strategy_index()) ||
+		strategy.get_portfolio_mut() != this)
+	{
+		return std::unexpected(AgisException("strategy does not belong to portfolio"));
+	}
+	_strategies.erase(strategy.get_strategy_index());
+	return true;
+}
+
+
+//============================================================================
 std::optional<Position const*>
 Portfolio::get_position(std::string const& asset_id) const noexcept
 {
@@ -176,11 +189,27 @@ Portfolio::build(size_t n)
 
 
 //============================================================================
+template<typename T>
+void Portfolio::free_object_vector(tbb::concurrent_vector<T*>& objects)
+{
+	for (auto& object : objects)
+	{
+		assert(object);
+		auto parent_portfolio = object->get_parent_portfolio_mut();
+		assert(parent_portfolio);
+		if (parent_portfolio != this) continue;
+		delete object;
+	}
+	objects.clear();
+}
+
+
+//============================================================================
 void Portfolio::reset()
 {
 	_tracers.reset();
-	_p->trade_history.clear();
-	_p->order_history.clear();
+	free_object_vector<Trade>(_p->trade_history);
+	free_object_vector<Order>(_p->order_history);
 	_positions.clear();
 	_p->position_pool.reset();
 
@@ -248,7 +277,7 @@ Portfolio::evaluate(bool on_close, bool is_reprice)
 
 	for (auto& order : filled_orders)
 	{
-		auto portfolio = *(order->get_parent_portfolio_mut());
+		auto portfolio = order->get_parent_portfolio_mut();
 		portfolio->process_order(std::move(order));
 	}
 	return _tracers.evaluate(is_reprice);
@@ -324,6 +353,7 @@ Portfolio::add_strategy(std::unique_ptr<Strategy> strategy)
 void
 Portfolio::place_order(std::unique_ptr<Order> order) noexcept
 {
+	order->set_parent_portfolio(this);
 	if (!_exchange) return;
 	auto res = _exchange.value()->place_order(std::move(order));
 	if(res)
@@ -397,7 +427,18 @@ Portfolio::process_filled_order(Order* order)
 
 
 //============================================================================
-void Portfolio::process_order(std::unique_ptr<Order> order)
+void
+Portfolio::remember_order(Order* order) noexcept
+{
+	_p->order_history.push_back(order);
+	while (_parent_portfolio)
+	{
+		_parent_portfolio.value()->remember_order(order);
+	}
+}
+
+//============================================================================
+void Portfolio::process_order(UniquePtr<Order> order)
 {
 	switch (order->get_order_state())
 	{
@@ -409,7 +450,9 @@ void Portfolio::process_order(std::unique_ptr<Order> order)
 	}
 	if (_tracers.track_orders)
 	{
-		_p->order_history.push_back(std::move(order));
+		// release unique_ptr ownership in order to share order up portfolio tree. On reset or on Portfolio
+		// destruction, the order will be deleted by it's respective parent portfolio (whoever placed it).
+		this->remember_order(order.release());
 	}
 }
 
@@ -675,7 +718,7 @@ double Portfolio::get_nlv() const noexcept
 
 
 //============================================================================
-tbb::concurrent_vector<UniquePtr<Order>> const&
+tbb::concurrent_vector<Order*> const&
 Portfolio::order_history() const noexcept
 {
 	return _p->order_history;

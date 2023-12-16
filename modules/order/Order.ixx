@@ -47,7 +47,7 @@ private:
 	static std::atomic<size_t> order_counter;
 	Asset const* _asset = nullptr;
 	Strategy*	_strategy = nullptr;
-	std::optional<Portfolio*> parent_portfolio;
+	Portfolio* _portfolio = nullptr;
 	OrderType	_type;
 	OrderState	_state = OrderState::PENDING;
 	bool		_force_close = false;
@@ -73,7 +73,7 @@ private:
 	void set_units(double units) noexcept { this->_units = units; }
 	void set_force_close(bool force_close) noexcept { this->_force_close = force_close; }
 	[[nodiscard]] inline Strategy* get_strategy_mut() const noexcept { return this->_strategy; }
-	[[nodiscard]] inline std::optional<Portfolio*> get_parent_portfolio_mut() const noexcept { return this->parent_portfolio; }
+	[[nodiscard]] inline Portfolio* get_parent_portfolio_mut() const noexcept { return this->_portfolio; }
 
 public:
 	Order(){}
@@ -94,7 +94,7 @@ public:
 		size_t exchange_index,
 		size_t portfolio_index
 	);
-	void set_parent_portfolio(Portfolio* portfolio) noexcept { this->parent_portfolio = portfolio; }
+	void set_parent_portfolio(Portfolio* portfolio) noexcept { this->_portfolio = portfolio; }
 	[[nodiscard]] inline bool is_force_close() const noexcept { return this->_force_close; }
 	[[nodiscard]] inline Strategy const* get_strategy() const noexcept { return this->_strategy; }
 	[[nodiscard]] inline Asset const* get_asset() const noexcept { return this->_asset; }

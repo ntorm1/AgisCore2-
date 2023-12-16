@@ -150,8 +150,9 @@ Hydra::step() noexcept
 	_p->exchanges.step();
 
 	// evaluate master portfolio at current time and prices
-	_p->master_portfolio.evaluate(true, true);
-	
+	auto res_eval = _p->master_portfolio.evaluate(true, true);
+	if (!res_eval) return res_eval;
+
 	// step portfolios forward in time and call strategy next as needed
 	AGIS_ASSIGN_OR_RETURN(res,_p->master_portfolio.step());
 	_p->pool.wait();
@@ -160,7 +161,8 @@ Hydra::step() noexcept
 	_p->exchanges.process_orders(true);
 
 	// evaluate master portfolio at current time and prices
-	_p->master_portfolio.evaluate(true, false);
+	res_eval = _p->master_portfolio.evaluate(true, false);
+	if (!res_eval) return res_eval;
 
 	_p->current_index++;
 	if (_p->current_index == _p->exchanges.get_dt_index().size())
@@ -297,6 +299,27 @@ Hydra::register_strategy(std::unique_ptr<Strategy> strategy)
 	auto res = portfolio->add_strategy(std::move(strategy));
 	if (!res) return res;
 	_p->strategies[std::move(id)] = p;
+	return true;
+}
+
+
+//============================================================================
+std::expected<bool, AgisException> 
+Hydra::remove_strategy(Strategy& strategy)
+{
+	if (_state != HydraState::BUILT)
+	{
+		return std::unexpected<AgisException>(AgisException("Hydra must be in built state"));
+	}
+
+	if (!_p->strategies.count(strategy.get_strategy_id()))
+	{
+		return std::unexpected<AgisException>(AgisException("Strategy does not exist"));
+	}
+	auto portfolio = strategy.get_portfolio_mut();
+	auto res = portfolio->remove_strategy(strategy);
+	if (!res) return res;
+	_p->strategies.erase(strategy.get_strategy_id());
 	return true;
 }
 

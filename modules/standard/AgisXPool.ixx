@@ -6,6 +6,7 @@ export module AgisXPool;
 import <vector>;
 import <memory>;
 import <shared_mutex>;
+import <atomic>;
 
 namespace Agis
 {
@@ -29,9 +30,8 @@ class ObjectPool
 
 private:
 	std::vector<std::unique_ptr<T>> _objects;
-	// add mutex
 	std::shared_mutex _mutex;
-	size_t _index = 0;
+	std::atomic<size_t> _index = 0;
 public:
 	ObjectPool(size_t n)
 	{
@@ -61,10 +61,7 @@ public:
 	template <typename... Args>
 	std::unique_ptr<T> pop_unique(Args&&... args)
 	{
-		_mutex.lock();
-		size_t item_index = _index;
-		_index++;
-		_mutex.unlock();
+		size_t item_index = _index.fetch_add(1);
 		if (item_index >= _objects.size())
 		{
 			_mutex.lock();
@@ -93,10 +90,7 @@ public:
 	template <typename... Args>
 	T* get(Args&&... args)
 	{
-		_mutex.lock();
-		size_t item_index = _index;
-		_index++;
-		_mutex.unlock();
+		size_t item_index = _index.fetch_add(1);
 		if (item_index >= _objects.size())
 		{
 			_mutex.lock();
