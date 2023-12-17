@@ -23,6 +23,7 @@ export enum Tracer : size_t {
     NLV = 0,
     CASH = 1,
     UNREALIZED_PNL = 2,
+    ORDERS = 3,
     MAX = 5
 };
 
@@ -77,7 +78,6 @@ private:
     inline void allocation_add_assign(size_t i, double v) noexcept { _weights[i- _exchange_offset] += v; }
     Strategy* strategy = nullptr;
     Portfolio* portfolio = nullptr;
-    bool track_orders = false;
     size_t _exchange_offset = 0;
     size_t _current_index = 0;
     Eigen::VectorXd _weights;

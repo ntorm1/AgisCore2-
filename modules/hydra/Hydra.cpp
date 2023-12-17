@@ -101,10 +101,12 @@ Hydra::run() noexcept
 	}
 	if (_p->current_index == 0) this->reset();
 	_mutex.lock();
+	_running.store(true);
 	auto index = _p->exchanges.get_dt_index();
 	for (size_t i = _p->current_index; i < index.size(); ++i)
 	{
 		AGIS_ASSIGN_OR_RETURN(res, step());
+		if (!_running.load()) break;
 	}
 	_mutex.unlock();
 	return true;

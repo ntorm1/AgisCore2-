@@ -41,6 +41,7 @@ export class Hydra
 private:
 	HydraPrivate* _p;
 	HydraState _state = HydraState::INIT;
+	std::atomic<bool> _running = false;
 	mutable std::shared_mutex _mutex;
 
 public:
@@ -49,7 +50,7 @@ public:
 
 	AGIS_API std::unique_lock<std::shared_mutex> __aquire_write_lock() const noexcept;
 	AGIS_API std::shared_lock<std::shared_mutex> __aquire_read_lock() const noexcept;
-	
+	AGIS_API void interupt() noexcept { _running.store(false);}
 	AGIS_API [[nodiscard]] HydraState get_state() const noexcept { return _state; }
 	AGIS_API [[nodiscard]] long long get_next_global_time() const noexcept;
 	AGIS_API [[nodiscard]] long long get_global_time() const noexcept;

@@ -112,6 +112,8 @@ public:
 	AGIS_API auto const& positions() const noexcept {return _positions;}
 	AGIS_API tbb::concurrent_vector<Order*> const& order_history() const noexcept;
 	AGIS_API auto const& get_tracers() const noexcept { return _tracers; }
+	AGIS_API bool has_tracer(Tracer t) const noexcept { return _tracers.has(t); }
+	AGIS_API void set_tracer(Tracer t) noexcept { _tracers.set(t); }
 
 	std::optional<Exchange const*> get_exchange() const noexcept { return _exchange; }
 	bool position_exists(size_t asset_index) const noexcept;

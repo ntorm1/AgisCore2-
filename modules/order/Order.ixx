@@ -100,9 +100,9 @@ public:
 	[[nodiscard]] inline Asset const* get_asset() const noexcept { return this->_asset; }
 	[[nodiscard]] inline size_t get_order_id() const noexcept { return this->_id; }
 	[[nodiscard]] inline size_t get_exchange_index() const noexcept { return this->_exchange_index; }
-	[[nodiscard]] inline size_t get_asset_index() const noexcept { return this->_asset_index; }
-	[[nodiscard]] inline size_t get_strategy_index() const noexcept { return this->_strategy_index; }
-	[[nodiscard]] inline size_t get_portfolio_index() const noexcept { return this->_portfolio_index; }
+	AGIS_API [[nodiscard]] inline size_t get_asset_index() const noexcept { return this->_asset_index; }
+	AGIS_API [[nodiscard]] inline size_t get_strategy_index() const noexcept { return this->_strategy_index; }
+	AGIS_API [[nodiscard]] inline size_t get_portfolio_index() const noexcept { return this->_portfolio_index; }
 	[[nodiscard]] inline size_t get_broker_index() const noexcept { return this->_broker_index; }
 	[[nodiscard]] inline OrderType get_order_type() const noexcept { return this->_type; }
 	[[nodiscard]] inline OrderState get_order_state() const noexcept { return this->_state; }

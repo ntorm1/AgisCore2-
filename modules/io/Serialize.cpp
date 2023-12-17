@@ -78,6 +78,7 @@ serialize_portfolio(rapidjson::Document::AllocatorType& allocator, Portfolio con
 	j.AddMember("portfolio_id", v_portfolio_id.Move(), allocator);
 	rapidjson::Value v_exchange_id(exchange_id.c_str(), allocator);
 	j.AddMember("exchange_id", v_exchange_id.Move(), allocator);
+	j.AddMember("order_tracer", portfolio.has_tracer(Tracer::ORDERS), allocator);
 
 	rapidjson::Document child_portfolios_json(rapidjson::kObjectType);
 	rapidjson::Document child_strategy_json_all(rapidjson::kObjectType);
@@ -131,6 +132,12 @@ deserialize_portfolio(
 	{
 		res = hydra->get_portfolio_mut("master").value();
 	}
+
+	if (json.HasMember("order_tracer") && json["order_tracer"].GetBool())
+	{
+		res.value()->set_tracer(Tracer::ORDERS);
+	}
+
 	// if serailized portfolio has child portfolio build them and pass pointer to the 
 	// previously created portfolio
 	if (json.HasMember("child_portfolios"))

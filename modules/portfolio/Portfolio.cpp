@@ -430,11 +430,18 @@ Portfolio::process_filled_order(Order* order)
 void
 Portfolio::remember_order(Order* order) noexcept
 {
-	_p->order_history.push_back(order);
-	while (_parent_portfolio)
+	if (_tracers.has(Tracer::ORDERS))
 	{
-		_parent_portfolio.value()->remember_order(order);
+		_p->order_history.push_back(order);
+		if (_parent_portfolio)
+		{
+			_parent_portfolio.value()->remember_order(order);
+		}
 	}
+	else
+	{
+		delete order;
+	}	
 }
 
 //============================================================================
@@ -448,12 +455,9 @@ void Portfolio::process_order(UniquePtr<Order> order)
 	default:
 		break;
 	}
-	if (_tracers.track_orders)
-	{
-		// release unique_ptr ownership in order to share order up portfolio tree. On reset or on Portfolio
-		// destruction, the order will be deleted by it's respective parent portfolio (whoever placed it).
-		this->remember_order(order.release());
-	}
+	// release unique_ptr ownership in order to share order up portfolio tree. On reset or on Portfolio
+	// destruction, the order will be deleted by it's respective parent portfolio (whoever placed it).
+	this->remember_order(order.release());
 }
 
 
